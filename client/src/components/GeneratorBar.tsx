@@ -26,6 +26,7 @@ export function GeneratorBar({
   onGenerate,
   onBest,
   canGenerate,
+  busy,
   genState,
   onNav,
   onClearGen,
@@ -37,6 +38,7 @@ export function GeneratorBar({
   onGenerate: () => void;
   onBest: () => void;
   canGenerate: boolean;
+  busy?: boolean;
   genState: GenBarState | null;
   onNav: (delta: number) => void;
   onClearGen: () => void;
@@ -138,7 +140,7 @@ export function GeneratorBar({
         </label>
         <div className="gen-buttons">
           <button className="btn-generate" onClick={onGenerate} disabled={!canGenerate}>
-            Generate schedules
+            {busy ? 'Looking up ratings…' : 'Generate schedules'}
           </button>
           <button
             className="btn-best"

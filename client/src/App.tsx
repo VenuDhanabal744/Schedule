@@ -2,7 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import type { DragStartEvent, DragMoveEvent, DragEndEvent } from '@dnd-kit/core';
 import type { Course, Constraints, Selected } from './types';
-import { fetchTermsInfo, fetchCourses, importTerm, fetchRatings, getRating } from './api';
+import {
+  fetchTermsInfo,
+  fetchCourses,
+  importTerm,
+  fetchRatings,
+  getRating,
+  setRatingsSchool,
+} from './api';
 import type { TermsInfo } from './api';
 import { generateSchedules, scheduleProfScore } from './schedule';
 import { Calendar } from './components/Calendar';
@@ -30,10 +37,22 @@ type GenState = {
 
 const ratingOf = (name: string) => getRating(name)?.avgRating ?? null;
 
+const SCHOOL_OPTIONS = [
+  { key: 'jhu', label: 'Johns Hopkins' },
+  { key: 'temple', label: 'Temple' },
+];
+
 // Approximate end of a term ("Fall 2026" -> Jan 1 2027); null if unrecognized.
-const TERM_END_MONTH: Record<string, number> = { Intersession: 1, Spring: 5, Summer: 8, Fall: 12 };
+const TERM_END_MONTH: Record<string, number> = {
+  Intersession: 1,
+  Spring: 5,
+  'Summer I': 6,
+  'Summer II': 8,
+  Summer: 8,
+  Fall: 12,
+};
 function termEnd(name: string): Date | null {
-  const m = name.match(/^(Intersession|Spring|Summer|Fall)\s+(\d{4})$/);
+  const m = name.match(/^(Intersession|Spring|Summer I{1,2}|Summer|Fall)\s+(\d{4})$/);
   if (!m) return null;
   return new Date(+m[2], TERM_END_MONTH[m[1]], 1); // month index rolls Fall into next January
 }
@@ -43,6 +62,7 @@ const isCurrentOrFuture = (name: string) => {
 };
 
 export default function App() {
+  const [school, setSchool] = useState<string>(() => localStorage.getItem('school') ?? 'jhu');
   const [termsInfo, setTermsInfo] = useState<TermsInfo | null>(null);
   const [term, setTerm] = useState<string>('');
   const [courses, setCourses] = useState<Course[]>([]);
@@ -51,46 +71,64 @@ export default function App() {
   const [constraints, setConstraints] = useState<Constraints>(DEFAULT_CONSTRAINTS);
   const [sortBy, setSortBy] = useState<'compact' | 'professors'>('compact');
   const [gen, setGen] = useState<GenState | null>(null);
+  const [genBusy, setGenBusy] = useState(false);
   const [activeDrag, setActiveDrag] = useState<DragItem | null>(null);
   const [importLog, setImportLog] = useState<string[] | null>(null);
   const importing = useRef(false);
 
-  // initial terms load; prefer a real imported term over the demo
+  // load terms for the active school; prefer a real imported term over the demo
   useEffect(() => {
-    fetchTermsInfo().then((info) => {
+    localStorage.setItem('school', school);
+    setRatingsSchool(school);
+    setTermsInfo(null);
+    setTerm('');
+    setCourses([]);
+    setSelected([]);
+    setGen(null);
+    setLoadError(null);
+    fetchTermsInfo(school).then((info) => {
       setTermsInfo(info);
-      const saved = localStorage.getItem('term');
-      const candidates = [...info.imported, info.sampleTerm];
-      setTerm(saved && candidates.includes(saved) ? saved : info.imported[0] ?? info.sampleTerm);
+      const saved = localStorage.getItem(`term:${school}`);
+      const candidates = [...info.imported, ...(info.sampleTerm ? [info.sampleTerm] : [])];
+      setTerm(
+        saved && candidates.includes(saved) ? saved : info.imported[0] ?? info.sampleTerm ?? ''
+      );
     });
-  }, []);
+  }, [school]);
 
   // load courses when term changes; restore saved selection for that term
   useEffect(() => {
     if (!term) return;
-    localStorage.setItem('term', term);
+    localStorage.setItem(`term:${school}`, term);
     setCourses([]);
     setGen(null);
     setLoadError(null);
-    fetchCourses(term)
+    fetchCourses(school, term)
       .then((cs) => {
         setCourses(cs);
         try {
-          const saved = JSON.parse(localStorage.getItem(`selected:${term}`) ?? '[]');
+          const raw =
+            localStorage.getItem(`selected:${school}:${term}`) ??
+            // selections saved before multi-school support used an unscoped key
+            (school === 'jhu' ? localStorage.getItem(`selected:${term}`) : null) ??
+            '[]';
+          const saved = JSON.parse(raw);
           setSelected(saved.filter((s: Selected) => cs.some((c) => c.code === s.code)));
         } catch {
           setSelected([]);
         }
       })
       .catch((err) => setLoadError(err.message));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [term]);
 
   useEffect(() => {
     // don't save until this term's courses (and restored selection) have loaded,
     // otherwise the initial empty selection wipes the stored one
     if (term && courses.length) {
-      localStorage.setItem(`selected:${term}`, JSON.stringify(selected));
+      localStorage.setItem(`selected:${school}:${term}`, JSON.stringify(selected));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, term, courses]);
 
   const courseMap = useMemo(() => new Map(courses.map((c) => [c.code, c])), [courses]);
@@ -135,6 +173,8 @@ export default function App() {
   };
 
   const runGenerate = async (best = false) => {
+    if (genBusy) return;
+    setGenBusy(true);
     const chosen = selected
       .map((s) => courseMap.get(s.code))
       .filter((c): c is Course => !!c);
@@ -145,6 +185,7 @@ export default function App() {
     } catch {
       /* score with whatever ratings we have */
     }
+    setGenBusy(false);
     const lockedIdx = chosen.map((c) => {
       const entry = selected.find((s) => s.code === c.code);
       return entry?.locked && entry.sectionIdx != null ? entry.sectionIdx : null;
@@ -209,13 +250,13 @@ export default function App() {
     }
   };
 
-  const runImport = async (t: string) => {
+  const runImport = async (t: string, code: string) => {
     if (importing.current) return;
     importing.current = true;
     setImportLog([`Importing ${t}…`]);
     try {
-      await importTerm(t, (line) => setImportLog((log) => [...(log ?? []), line]));
-      const info = await fetchTermsInfo();
+      await importTerm(school, t, code, (line) => setImportLog((log) => [...(log ?? []), line]));
+      const info = await fetchTermsInfo(school);
       setTermsInfo(info);
       if (info.imported.includes(t)) {
         setImportLog(null);
@@ -232,31 +273,36 @@ export default function App() {
     if (!termsInfo) return [];
     // only current/future terms — but never hide the term that's selected right now
     const show = (t: string) => isCurrentOrFuture(t) || t === term;
-    const opts: { value: string; label: string; imported: boolean }[] = [];
-    // imported terms that aren't in the live SIS list (e.g. key missing) still need to show
+    const opts: { value: string; code: string; label: string; imported: boolean }[] = [];
+    const availableNames = termsInfo.available.map((a) => a.name);
+    // imported terms that aren't in the live list (e.g. key missing) still need to show
     for (const t of termsInfo.imported) {
-      if (!termsInfo.available.includes(t) && show(t)) {
-        opts.push({ value: t, label: `${t} ✓`, imported: true });
+      if (!availableNames.includes(t) && show(t)) {
+        opts.push({ value: t, code: t, label: `${t} ✓`, imported: true });
       }
     }
-    // one chronological list (SIS order), imported terms marked in place
-    for (const t of termsInfo.available) {
-      if (!show(t)) continue;
-      const imported = termsInfo.imported.includes(t);
-      opts.push({ value: t, label: imported ? `${t} ✓` : t, imported });
+    // one chronological list, imported terms marked in place
+    for (const a of termsInfo.available) {
+      if (!show(a.name)) continue;
+      const imported = termsInfo.imported.includes(a.name);
+      opts.push({ value: a.name, code: a.code, label: imported ? `${a.name} ✓` : a.name, imported });
     }
-    opts.push({
-      value: termsInfo.sampleTerm,
-      label: `${termsInfo.sampleTerm} (built-in demo)`,
-      imported: true,
-    });
+    if (termsInfo.sampleTerm) {
+      opts.push({
+        value: termsInfo.sampleTerm,
+        code: termsInfo.sampleTerm,
+        label: `${termsInfo.sampleTerm} (built-in demo)`,
+        imported: true,
+      });
+    }
     return opts;
   }, [termsInfo, term]);
 
   const onTermChoice = (value: string) => {
     const opt = termOptions.find((o) => o.value === value);
-    if (opt && !opt.imported) {
-      runImport(value);
+    if (!opt) return;
+    if (!opt.imported) {
+      runImport(opt.value, opt.code);
     } else {
       setTerm(value);
     }
@@ -292,8 +338,19 @@ export default function App() {
         <header className="topbar">
           <h1>Schedule</h1>
           <div className="term-picker">
+            <label>School</label>
+            <select value={school} onChange={(e) => setSchool(e.target.value)}>
+              {SCHOOL_OPTIONS.map((s) => (
+                <option key={s.key} value={s.key}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="term-picker">
             <label>Term</label>
             <select value={term} onChange={(e) => onTermChoice(e.target.value)}>
+              {term === '' && <option value="">Select a term…</option>}
               {termOptions.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
@@ -301,7 +358,7 @@ export default function App() {
               ))}
             </select>
           </div>
-          {termsInfo && !termsInfo.hasKey && (
+          {school === 'jhu' && termsInfo && !termsInfo.hasKey && (
             <div className="key-warning">
               No SIS API key — using demo data. Add SIS_API_KEY to .env and restart.
             </div>
@@ -327,7 +384,8 @@ export default function App() {
               setSortBy={setSortBy}
               onGenerate={() => runGenerate(false)}
               onBest={() => runGenerate(true)}
-              canGenerate={selected.length > 0}
+              canGenerate={selected.length > 0 && !genBusy}
+              busy={genBusy}
               genState={genBarState}
               onNav={navGen}
               onClearGen={() => setGen(null)}

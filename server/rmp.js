@@ -1,5 +1,6 @@
 // RateMyProfessors lookup via its public GraphQL endpoint (unofficial).
-// Results are cached on disk; lookups that fail resolve to null rather than erroring.
+// Results are cached on disk per school; lookups that fail resolve to null
+// rather than erroring.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -12,11 +13,21 @@ const GRAPHQL_URL = 'https://www.ratemyprofessors.com/graphql';
 // The RMP web client authenticates with this fixed basic token ("test:test").
 const AUTH = 'Basic dGVzdDp0ZXN0';
 
-let cache = { schoolId: null, teachers: {} };
+let cache = { schools: {} };
 try {
-  cache = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
+  const loaded = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
+  if (loaded.schools) {
+    cache = loaded;
+  } else if (loaded.teachers) {
+    // migrate the old single-school (JHU) cache shape
+    cache = { schools: { jhu: { schoolId: loaded.schoolId, teachers: loaded.teachers } } };
+  }
 } catch {
   /* fresh cache */
+}
+
+function schoolCache(key) {
+  return (cache.schools[key] ??= { schoolId: null, teachers: {} });
 }
 
 function saveCache() {
@@ -40,27 +51,29 @@ async function gql(query, variables) {
   return body.data;
 }
 
-async function resolveSchoolId() {
-  if (cache.schoolId) return cache.schoolId;
+async function resolveSchoolId(schoolKey, rmpName) {
+  const sc = schoolCache(schoolKey);
+  if (sc.schoolId) return sc.schoolId;
   const data = await gql(
     `query SearchSchools($query: SchoolSearchQuery!) {
        newSearch { schools(query: $query) {
          edges { node { id name city state } }
        } }
      }`,
-    { query: { text: 'Johns Hopkins University' } }
+    { query: { text: rmpName } }
   );
   const edges = data?.newSearch?.schools?.edges ?? [];
-  const jhu =
-    edges.find((e) => /johns hopkins university/i.test(e.node.name))?.node ??
+  const match =
+    edges.find((e) => e.node.name.toLowerCase() === rmpName.toLowerCase())?.node ??
     edges[0]?.node;
-  if (!jhu) throw new Error('Could not resolve JHU on RateMyProfessors');
-  cache.schoolId = jhu.id;
+  if (!match) throw new Error(`Could not resolve "${rmpName}" on RateMyProfessors`);
+  sc.schoolId = match.id;
   saveCache();
-  return jhu.id;
+  return match.id;
 }
 
 // SIS gives "Last, First M" — RMP search works best with "First Last".
+// Names already in "First Last" form (e.g. Temple's) pass through unchanged.
 function searchName(instructor) {
   const m = instructor.match(/^([^,]+),\s*(.+)$/);
   if (!m) return instructor;
@@ -68,13 +81,14 @@ function searchName(instructor) {
   return `${first} ${m[1].trim()}`;
 }
 
-export async function lookupInstructor(instructor) {
+export async function lookupInstructor(schoolKey, rmpName, instructor) {
+  const sc = schoolCache(schoolKey);
   const key = instructor.toLowerCase();
-  if (key in cache.teachers) return cache.teachers[key];
+  if (key in sc.teachers) return sc.teachers[key];
 
   let result = null;
   try {
-    const schoolId = await resolveSchoolId();
+    const schoolId = await resolveSchoolId(schoolKey, rmpName);
     const data = await gql(
       `query SearchTeachers($query: TeacherSearchQuery!) {
          newSearch { teachers(query: $query, first: 3) {
@@ -105,7 +119,7 @@ export async function lookupInstructor(instructor) {
     return null;
   }
 
-  cache.teachers[key] = result;
+  sc.teachers[key] = result;
   saveCache();
   return result;
 }
