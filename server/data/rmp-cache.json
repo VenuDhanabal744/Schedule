@@ -1,0 +1,550 @@
+{
+  "schoolId": "U2Nob29sLTQ2NA==",
+  "teachers": {
+    "selinski, sara": {
+      "name": "Sara More",
+      "department": "Computer Science",
+      "avgRating": 4.5,
+      "avgDifficulty": 3.6,
+      "numRatings": 8,
+      "wouldTakeAgain": 87.5,
+      "url": "https://www.ratemyprofessors.com/professor/2475145"
+    },
+    "darvish, ali": {
+      "name": "Mohammad Ali Darvish",
+      "department": "Computer Science",
+      "avgRating": 2,
+      "avgDifficulty": 4.3,
+      "numRatings": 3,
+      "wouldTakeAgain": 33.3333,
+      "url": "https://www.ratemyprofessors.com/professor/2758215"
+    },
+    "maksimovic, petar": {
+      "name": "Petar Maksimovic",
+      "department": "Physics",
+      "avgRating": 3.9,
+      "avgDifficulty": 3.9,
+      "numRatings": 21,
+      "wouldTakeAgain": 54.5455,
+      "url": "https://www.ratemyprofessors.com/professor/1228463"
+    },
+    "kazhdan, misha": {
+      "name": "Michael Kazhdan",
+      "department": "Computer Science",
+      "avgRating": 4.8,
+      "avgDifficulty": 3,
+      "numRatings": 5,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/843426"
+    },
+    "marshburn, nicholas": {
+      "name": "Nicholas Marshburn",
+      "department": "Mathematics",
+      "avgRating": 4.7,
+      "avgDifficulty": 3.3,
+      "numRatings": 4,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/1708439"
+    },
+    "brown, richard": {
+      "name": "Richard Brown",
+      "department": "Mathematics",
+      "avgRating": 3.9,
+      "avgDifficulty": 3.6,
+      "numRatings": 43,
+      "wouldTakeAgain": 81.25,
+      "url": "https://www.ratemyprofessors.com/professor/783283"
+    },
+    "nakade": null,
+    "apurva": null,
+    "wright": {
+      "name": "Kayla Wright",
+      "department": "Mathematics",
+      "avgRating": 1.7,
+      "avgDifficulty": 3.5,
+      "numRatings": 13,
+      "wouldTakeAgain": 14.2857,
+      "url": "https://www.ratemyprofessors.com/professor/3128128"
+    },
+    "bob": null,
+    "marshburn": {
+      "name": "Nicholas Marshburn",
+      "department": "Mathematics",
+      "avgRating": 4.7,
+      "avgDifficulty": 3.3,
+      "numRatings": 4,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/1708439"
+    },
+    "kayla": {
+      "name": "Kayla Wright",
+      "department": "Mathematics",
+      "avgRating": 1.7,
+      "avgDifficulty": 3.5,
+      "numRatings": 13,
+      "wouldTakeAgain": 14.2857,
+      "url": "https://www.ratemyprofessors.com/professor/3128128"
+    },
+    "ali": {
+      "name": "Alison Papadakis ",
+      "department": "Psychology",
+      "avgRating": 5,
+      "avgDifficulty": 3,
+      "numRatings": 2,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/2998463"
+    },
+    "barbera": {
+      "name": "Robert Barbera",
+      "department": "Economics",
+      "avgRating": 2.9,
+      "avgDifficulty": 3.5,
+      "numRatings": 17,
+      "wouldTakeAgain": 30.7692,
+      "url": "https://www.ratemyprofessors.com/professor/1908873"
+    },
+    "hellen": {
+      "name": "Hellen Seshie-Nasser",
+      "department": "Economics",
+      "avgRating": 4.4,
+      "avgDifficulty": 3,
+      "numRatings": 7,
+      "wouldTakeAgain": 85.7143,
+      "url": "https://www.ratemyprofessors.com/professor/2738691"
+    },
+    "nicholas a": {
+      "name": "Nicholas Durr",
+      "department": "Biomedical",
+      "avgRating": 4,
+      "avgDifficulty": 5,
+      "numRatings": 1,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/2051829"
+    },
+    "madooei": {
+      "name": "Ali Madooei",
+      "department": "Computer Science",
+      "avgRating": 4.4,
+      "avgDifficulty": 3.6,
+      "numRatings": 12,
+      "wouldTakeAgain": 83.3333,
+      "url": "https://www.ratemyprofessors.com/professor/2789509"
+    },
+    "seshie-nasser": {
+      "name": "Hellen Seshie-Nasser",
+      "department": "Economics",
+      "avgRating": 4.4,
+      "avgDifficulty": 3,
+      "numRatings": 7,
+      "wouldTakeAgain": 85.7143,
+      "url": "https://www.ratemyprofessors.com/professor/2738691"
+    },
+    "nakade, apurva": null,
+    "barbera, bob": null,
+    "madooei, ali": {
+      "name": "Ali Madooei",
+      "department": "Computer Science",
+      "avgRating": 4.4,
+      "avgDifficulty": 3.6,
+      "numRatings": 12,
+      "wouldTakeAgain": 83.3333,
+      "url": "https://www.ratemyprofessors.com/professor/2789509"
+    },
+    "marshburn, nicholas a": {
+      "name": "Nicholas Marshburn",
+      "department": "Mathematics",
+      "avgRating": 4.7,
+      "avgDifficulty": 3.3,
+      "numRatings": 4,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/1708439"
+    },
+    "seshie-nasser, hellen": {
+      "name": "Hellen Seshie-Nasser",
+      "department": "Economics",
+      "avgRating": 4.4,
+      "avgDifficulty": 3,
+      "numRatings": 7,
+      "wouldTakeAgain": 85.7143,
+      "url": "https://www.ratemyprofessors.com/professor/2738691"
+    },
+    "wright, kayla": {
+      "name": "Kayla Wright",
+      "department": "Mathematics",
+      "avgRating": 1.7,
+      "avgDifficulty": 3.5,
+      "numRatings": 13,
+      "wouldTakeAgain": 14.2857,
+      "url": "https://www.ratemyprofessors.com/professor/3128128"
+    },
+    "wilkin, graeme": {
+      "name": "Graeme Wilkin",
+      "department": "Mathematics",
+      "avgRating": 4.1,
+      "avgDifficulty": 3.7,
+      "numRatings": 18,
+      "wouldTakeAgain": -1,
+      "url": "https://www.ratemyprofessors.com/professor/930752"
+    },
+    "christiansen, teri e": null,
+    "staff": null,
+    "goldstein, erich a": null,
+    "shumakovitch, alexander n": {
+      "name": "Alexander Shumakovitch",
+      "department": "Mathematics",
+      "avgRating": 2,
+      "avgDifficulty": 4.3,
+      "numRatings": 3,
+      "wouldTakeAgain": 0,
+      "url": "https://www.ratemyprofessors.com/professor/2870438"
+    },
+    "abu-mulaweh, nusaybah": null,
+    "frye, jenna": null,
+    "burkholder murphy, alissa erin": null,
+    "falk, michael l": {
+      "name": "Michael Falk",
+      "department": "Science",
+      "avgRating": 4.3,
+      "avgDifficulty": 3.7,
+      "numRatings": 3,
+      "wouldTakeAgain": -1,
+      "url": "https://www.ratemyprofessors.com/professor/1121032"
+    },
+    "kessler, michael": {
+      "name": "Michael Dinitz",
+      "department": "Computer Science",
+      "avgRating": 4,
+      "avgDifficulty": 4.3,
+      "numRatings": 3,
+      "wouldTakeAgain": 66.6667,
+      "url": "https://www.ratemyprofessors.com/professor/2130467"
+    },
+    "selinski, joanne f": {
+      "name": "Joanne Selinski",
+      "department": "Computer Science",
+      "avgRating": 3.4,
+      "avgDifficulty": 3.4,
+      "numRatings": 5,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/1840807"
+    },
+    "logsdon, elizabeth anne": {
+      "name": "Elizabeth Logsdon",
+      "department": "Biomedical",
+      "avgRating": 1.8,
+      "avgDifficulty": 4,
+      "numRatings": 6,
+      "wouldTakeAgain": 50,
+      "url": "https://www.ratemyprofessors.com/professor/2042186"
+    },
+    "zwernemann, michelle": {
+      "name": "Michelle Barton",
+      "department": "Business",
+      "avgRating": 2.3,
+      "avgDifficulty": 3,
+      "numRatings": 3,
+      "wouldTakeAgain": 33.3333,
+      "url": "https://www.ratemyprofessors.com/professor/2852772"
+    },
+    "harris, tim": {
+      "name": "Tim Leschke",
+      "department": "Computer Science",
+      "avgRating": 2.4,
+      "avgDifficulty": 1.6,
+      "numRatings": 5,
+      "wouldTakeAgain": 40,
+      "url": "https://www.ratemyprofessors.com/professor/2882792"
+    },
+    "ramesh, sathappan": null,
+    "santosa, fadil": null,
+    "tilashalski, melissa christine": null,
+    "carroll, julia": {
+      "name": "Julia Yarmolinskaya",
+      "department": "Cognitive Science",
+      "avgRating": 4.8,
+      "avgDifficulty": 2.8,
+      "numRatings": 5,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/2622564"
+    },
+    "toscano, john p": {
+      "name": "John Toscano",
+      "department": "Chemistry",
+      "avgRating": 4,
+      "avgDifficulty": 2,
+      "numRatings": 1,
+      "wouldTakeAgain": -1,
+      "url": "https://www.ratemyprofessors.com/professor/1793793"
+    },
+    "nsengiyumva, olivier": {
+      "name": "Olivier Nsengiyumva",
+      "department": "Chemistry",
+      "avgRating": 5,
+      "avgDifficulty": 2.3,
+      "numRatings": 27,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/2978545"
+    },
+    "d'souza, larissa n": {
+      "name": "Larissa D'Souza",
+      "department": "Chemistry",
+      "avgRating": 4.3,
+      "avgDifficulty": 3.1,
+      "numRatings": 16,
+      "wouldTakeAgain": 86.6667,
+      "url": "https://www.ratemyprofessors.com/professor/1889027"
+    },
+    "watters, aliza": null,
+    "miranda mendoza, constanza": null,
+    "kutten, kwame sanwu": null,
+    "giovanis, dimitrios": null,
+    "presler-marshall, kai": {
+      "name": "Kai Presler-Marshall",
+      "department": "Computer Science",
+      "avgRating": 2,
+      "avgDifficulty": 4.7,
+      "numRatings": 3,
+      "wouldTakeAgain": 0,
+      "url": "https://www.ratemyprofessors.com/professor/3079231"
+    },
+    "miller, scot": {
+      "name": "Tim Miller",
+      "department": "Engineering",
+      "avgRating": 4.5,
+      "avgDifficulty": 2.5,
+      "numRatings": 2,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/2509080"
+    },
+    "haase, eileen b": {
+      "name": "Eileen Haase",
+      "department": "Biomedical Engineering",
+      "avgRating": 2.4,
+      "avgDifficulty": 3.6,
+      "numRatings": 8,
+      "wouldTakeAgain": 16.6667,
+      "url": "https://www.ratemyprofessors.com/professor/1299876"
+    },
+    "mendat, daniel": null,
+    "edison, john rajadayakaran": null,
+    "crainiceanu, adina": null,
+    "rivera, diana": null,
+    "rawlins, kyle": null,
+    "braverman, vova": null,
+    "husain, aasim": {
+      "name": "Muhammad Husain",
+      "department": "Economics",
+      "avgRating": 4.8,
+      "avgDifficulty": 3.3,
+      "numRatings": 4,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/2763843"
+    },
+    "greco, jane": {
+      "name": "Jane Greco",
+      "department": "Chemistry",
+      "avgRating": 3.5,
+      "avgDifficulty": 3.1,
+      "numRatings": 18,
+      "wouldTakeAgain": 42.8571,
+      "url": "https://www.ratemyprofessors.com/professor/968630"
+    },
+    "sherman, susan": null,
+    "barbera, robert": {
+      "name": "Robert Barbera",
+      "department": "Economics",
+      "avgRating": 2.9,
+      "avgDifficulty": 3.5,
+      "numRatings": 17,
+      "wouldTakeAgain": 30.7692,
+      "url": "https://www.ratemyprofessors.com/professor/1908873"
+    },
+    "chen, marcus": {
+      "name": "Xing Chen",
+      "department": "Medicine",
+      "avgRating": 4,
+      "avgDifficulty": 4,
+      "numRatings": 1,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/2338513"
+    },
+    "mccartney, stephanie a": {
+      "name": "Stephanie  McCartney",
+      "department": "Chemistry",
+      "avgRating": 1.5,
+      "avgDifficulty": 4.4,
+      "numRatings": 29,
+      "wouldTakeAgain": 13.7931,
+      "url": "https://www.ratemyprofessors.com/professor/2987362"
+    },
+    "sushkov, alexander": {
+      "name": "Alex Sargent",
+      "department": "Biology",
+      "avgRating": 3,
+      "avgDifficulty": 2,
+      "numRatings": 1,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/3014069"
+    },
+    "blokh, daniel": null,
+    "yarmolinskaya, julia": {
+      "name": "Julia Yarmolinskaya",
+      "department": "Cognitive Science",
+      "avgRating": 4.8,
+      "avgDifficulty": 2.8,
+      "numRatings": 5,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/2622564"
+    },
+    "bulzacchelli, maria": {
+      "name": "Maria Bulzacchelli",
+      "department": "Health Science",
+      "avgRating": 2.2,
+      "avgDifficulty": 1.8,
+      "numRatings": 9,
+      "wouldTakeAgain": 44.4444,
+      "url": "https://www.ratemyprofessors.com/professor/2547466"
+    },
+    "simari, patricio": {
+      "name": "Patricio Simari",
+      "department": "Computer Science",
+      "avgRating": 3,
+      "avgDifficulty": 4,
+      "numRatings": 6,
+      "wouldTakeAgain": 50,
+      "url": "https://www.ratemyprofessors.com/professor/2911301"
+    },
+    "thoi, sara sara": null,
+    "cheng, lan": {
+      "name": "Chenghao Chu",
+      "department": "Mathematics",
+      "avgRating": 3.9,
+      "avgDifficulty": 2.2,
+      "numRatings": 5,
+      "wouldTakeAgain": -1,
+      "url": "https://www.ratemyprofessors.com/professor/1321148"
+    },
+    "lee, iris yejin": {
+      "name": "Yu Jin Lee",
+      "department": "Biology",
+      "avgRating": 5,
+      "avgDifficulty": 3,
+      "numRatings": 2,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/2913327"
+    },
+    "piña, ingrid": null,
+    "guru, yastika": null,
+    "abatangelo, conal francis haruki": null,
+    "geselowitz, rye welz": null,
+    "silbaugh, lucy": null,
+    "sykes, matilda silver": null,
+    "witherspoon, sebastian": null,
+    "mcallister, kyra": null,
+    "o'connor, marisa t": null,
+    "fusilier, lauren": null,
+    "eduaful, fredrica markson": null,
+    "blackmon, codi renee renee": {
+      "name": "Codi Blackmon",
+      "department": "Writing",
+      "avgRating": 5,
+      "avgDifficulty": 1,
+      "numRatings": 1,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/3157053"
+    },
+    "schnitzler, carly elisabeth": null,
+    "hartmann-villalta, laura a": {
+      "name": "Laura Papish",
+      "department": "Philosophy",
+      "avgRating": 5,
+      "avgDifficulty": 3,
+      "numRatings": 2,
+      "wouldTakeAgain": -1,
+      "url": "https://www.ratemyprofessors.com/professor/1570809"
+    },
+    "grousdanidou, antonia": null,
+    "hull, brittany s": {
+      "name": "Britany  Hull",
+      "department": "English",
+      "avgRating": 2.5,
+      "avgDifficulty": 5,
+      "numRatings": 2,
+      "wouldTakeAgain": 50,
+      "url": "https://www.ratemyprofessors.com/professor/2998459"
+    },
+    "brodsky, anne-elizabeth murdy": {
+      "name": "Anne-Elizabeth Brodsky",
+      "department": "English",
+      "avgRating": 3.6,
+      "avgDifficulty": 3,
+      "numRatings": 6,
+      "wouldTakeAgain": 60,
+      "url": "https://www.ratemyprofessors.com/professor/2073842"
+    },
+    "koullas, sandy gillian": {
+      "name": "Soundarya Sandy Chidambaram",
+      "department": "Political Science",
+      "avgRating": 5,
+      "avgDifficulty": 3,
+      "numRatings": 1,
+      "wouldTakeAgain": -1,
+      "url": "https://www.ratemyprofessors.com/professor/1889925"
+    },
+    "essam, richard james llewellyn": null,
+    "vinyard, deirdre will": null,
+    "maddox, perry": null,
+    "russell, arthur j.": {
+      "name": "Arthur Bragg",
+      "department": "Chemistry",
+      "avgRating": 2.3,
+      "avgDifficulty": 4.2,
+      "numRatings": 10,
+      "wouldTakeAgain": 33.3333,
+      "url": "https://www.ratemyprofessors.com/professor/1643994"
+    },
+    "speller, mo elsmere longley": null,
+    "wright, lisa e.": {
+      "name": "Lisa Wright",
+      "department": "Writing",
+      "avgRating": 5,
+      "avgDifficulty": 3,
+      "numRatings": 1,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/2913343"
+    },
+    "oppel, george": {
+      "name": "George Oppel",
+      "department": "Political Science",
+      "avgRating": 4.6,
+      "avgDifficulty": 3.1,
+      "numRatings": 8,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/887578"
+    },
+    "murphy, jamison f": {
+      "name": "James Murphy",
+      "department": "Mathematics",
+      "avgRating": 4,
+      "avgDifficulty": 3.3,
+      "numRatings": 4,
+      "wouldTakeAgain": 75,
+      "url": "https://www.ratemyprofessors.com/professor/2310977"
+    },
+    "pilatte, malaurie jacqueline": null,
+    "joshi, kunal": null,
+    "menezes, benita maria": null,
+    "ludden, jason": null,
+    "goransson, jennifer": null,
+    "wexler, anthony charles": {
+      "name": "Anthony Wexler",
+      "department": "Writing",
+      "avgRating": 5,
+      "avgDifficulty": 2.2,
+      "numRatings": 5,
+      "wouldTakeAgain": 100,
+      "url": "https://www.ratemyprofessors.com/professor/2913791"
+    },
+    "devenot, nese lisa": null
+  }
+}
