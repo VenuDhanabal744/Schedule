@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import type { DragStartEvent, DragMoveEvent, DragEndEvent } from '@dnd-kit/core';
 import type { Course, Constraints, Selected } from './types';
 import {
@@ -217,9 +217,14 @@ export default function App() {
 
   const [hoverTarget, setHoverTarget] = useState<string | null>(null);
 
-  // Require a little movement before a drag activates so plain clicks
+  // Mouse: require a little movement before a drag activates so plain clicks
   // (e.g. clicking a calendar box to lock it) aren't swallowed by the sensor.
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  // Touch: require a long-press so one-finger scrolling still works; a quick
+  // tap stays a click.
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } })
+  );
 
   // Drop targets (ghost slots) mount only while a drag is active, so instead of
   // dnd-kit droppables we hit-test the pointer position against the DOM.

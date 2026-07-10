@@ -546,6 +546,10 @@ input[type='text'],
   outline-offset: -2px;
 }
 
+.cal-scroll {
+  min-width: 100%;
+}
+
 .cal-header {
   display: flex;
   position: sticky;
@@ -786,4 +790,87 @@ input[type='text'],
   padding: 7px 16px;
   font-weight: 600;
   cursor: pointer;
+}
+
+/* ---------- mobile ---------- */
+@media (max-width: 860px) {
+  .app {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .topbar {
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    padding: 8px 12px;
+  }
+
+  .topbar h1 {
+    font-size: 17px;
+    width: 100%;
+  }
+
+  .topbar-credit {
+    margin-left: 0;
+    width: 100%;
+    order: 10;
+  }
+
+  .key-warning {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .main {
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .sidebar {
+    width: 100%;
+    min-width: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* cap the course panel so the calendar stays reachable below it */
+  .search-pane .results,
+  .mine-pane .results {
+    max-height: 38vh;
+  }
+
+  .content {
+    padding: 10px;
+  }
+
+  .gen-controls {
+    gap: 8px 12px;
+  }
+
+  .gen-buttons {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .gen-buttons button {
+    flex: 1;
+  }
+
+  /* the week grid scrolls horizontally instead of squeezing */
+  .calendar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-height: 75vh;
+  }
+
+  .cal-scroll {
+    min-width: 620px;
+  }
+
+  .day-toggle,
+  .gen-results button {
+    min-height: 34px;
+    min-width: 34px;
+  }
 }

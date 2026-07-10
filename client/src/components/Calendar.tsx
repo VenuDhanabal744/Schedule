@@ -296,6 +296,7 @@ export function Calendar({
 
   return (
     <div className={`calendar${dropHint ? ' drop-ok' : ''}`}>
+      <div className="cal-scroll">
       <div className="cal-header">
         <div className="cal-gutter" />
         {days.map((d) => (
@@ -338,6 +339,7 @@ export function Calendar({
             )}
           </div>
         ))}
+      </div>
       </div>
     </div>
   );
