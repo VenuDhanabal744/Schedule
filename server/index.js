@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fetchTerms, fetchTermCatalog, normalizeCatalog } from './sis.js';
 import { fetchTempleTerms, fetchTempleCatalog, normalizeTempleCatalog } from './temple.js';
+import { fetchUncTerms, fetchUncCatalog, normalizeUncCatalog } from './unc.js';
 import { lookupInstructor } from './rmp.js';
 import { SAMPLE_TERM, SAMPLE_COURSES } from './sample.js';
 
@@ -17,6 +18,8 @@ const SIS_KEY = process.env.SIS_API_KEY?.trim() || null;
 const SCHOOLS = {
   jhu: { name: 'Johns Hopkins', rmpName: 'Johns Hopkins University' },
   temple: { name: 'Temple', rmpName: 'Temple University' },
+  // UNC's public class search redacts instructor names, so ratings stay empty
+  unc: { name: 'UNC-Chapel Hill', rmpName: 'University of North Carolina at Chapel Hill' },
 };
 
 const app = express();
@@ -57,8 +60,10 @@ app.get('/api/terms', async (req, res) => {
   try {
     if (school === 'jhu') {
       if (SIS_KEY) available = (await fetchTerms(SIS_KEY)).map((name) => ({ name, code: name }));
-    } else {
+    } else if (school === 'temple') {
       available = await fetchTempleTerms();
+    } else {
+      available = await fetchUncTerms();
     }
   } catch (err) {
     error = err.message;
@@ -91,10 +96,14 @@ app.post('/api/import', async (req, res) => {
       const records = await fetchTermCatalog(SIS_KEY, term, progress);
       courses = normalizeCatalog(records);
       progress(`normalized ${records.length} section records`);
-    } else {
+    } else if (school === 'temple') {
       const records = await fetchTempleCatalog(code ?? term, progress);
       courses = normalizeTempleCatalog(records);
       progress(`normalized ${records.length} section records`);
+    } else {
+      const rows = await fetchUncCatalog(code ?? term, progress);
+      courses = normalizeUncCatalog(rows);
+      progress(`normalized ${rows.length} section rows`);
     }
     fs.mkdirSync(DATA_DIR, { recursive: true });
     fs.writeFileSync(

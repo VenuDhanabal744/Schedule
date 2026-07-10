@@ -1,6 +1,6 @@
-# Schedule — JHU & Temple Course Planner
+# Schedule — JHU, Temple & UNC Course Planner
 
-A course-scheduling web app for Johns Hopkins and Temple: search the full JHU catalog, build your
+A course-scheduling web app for Johns Hopkins, Temple, and UNC-Chapel Hill: search the full JHU catalog, build your
 week with drag-and-drop, auto-generate every conflict-free schedule from your course list
 and constraints, and see RateMyProfessors ratings next to each instructor.
 

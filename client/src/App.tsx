@@ -40,6 +40,7 @@ const ratingOf = (name: string) => getRating(name)?.avgRating ?? null;
 const SCHOOL_OPTIONS = [
   { key: 'jhu', label: 'Johns Hopkins' },
   { key: 'temple', label: 'Temple' },
+  { key: 'unc', label: 'UNC-Chapel Hill' },
 ];
 
 // Approximate end of a term ("Fall 2026" -> Jan 1 2027); null if unrecognized.
