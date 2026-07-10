@@ -85,10 +85,15 @@ export async function fetchTempleCatalog(termCode, onProgress) {
     const url =
       `${BASE}/searchResults/searchResults?txt_term=${encodeURIComponent(termCode)}` +
       `&pageOffset=${offset}&pageMaxSize=${PAGE_SIZE}&sortColumn=subjectDescription&sortDirection=asc`;
-    const res = await fetch(url, {
-      headers: { 'User-Agent': UA, Accept: 'application/json', Cookie: cookies },
-    });
-    if (!res.ok) throw new Error(`Temple search failed at offset ${offset} (${res.status})`);
+    let res;
+    for (let attempt = 0; ; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 500 * attempt));
+      res = await fetch(url, {
+        headers: { 'User-Agent': UA, Accept: 'application/json', Cookie: cookies },
+      }).catch((err) => (attempt < 3 ? null : Promise.reject(err)));
+      if (res?.ok) break;
+      if (attempt >= 3) throw new Error(`Temple search failed at offset ${offset} (${res?.status})`);
+    }
     const body = await res.json();
     if (!body.success && !Array.isArray(body.data)) {
       throw new Error('Temple search returned no data — session may have expired');

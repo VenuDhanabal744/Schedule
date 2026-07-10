@@ -31,8 +31,11 @@ const termFile = (school, term) => path.join(DATA_DIR, `courses-${school}-${slug
 // legacy pre-multi-school filename: courses-Fall_2026.json -> courses-jhu-Fall_2026.json
 if (fs.existsSync(DATA_DIR)) {
   for (const f of fs.readdirSync(DATA_DIR)) {
-    const m = f.match(/^courses-(?!jhu-|temple-)(.+)\.json$/);
-    if (m) fs.renameSync(path.join(DATA_DIR, f), path.join(DATA_DIR, `courses-jhu-${m[1]}.json`));
+    const m = f.match(/^courses-(.+)\.json$/);
+    const hasSchoolPrefix = m && Object.keys(SCHOOLS).some((s) => m[1].startsWith(`${s}-`));
+    if (m && !hasSchoolPrefix) {
+      fs.renameSync(path.join(DATA_DIR, f), path.join(DATA_DIR, `courses-jhu-${m[1]}.json`));
+    }
   }
 }
 

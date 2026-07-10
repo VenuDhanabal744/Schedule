@@ -7,7 +7,8 @@
 
 const BASE = 'https://reports.unc.edu/class-search/';
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)';
-const CONCURRENCY = 6;
+const CONCURRENCY = 10;
+const RETRIES = 3;
 
 // "2026 Fall" -> "Fall 2026"
 function normalizeTermName(raw) {
@@ -17,9 +18,18 @@ function normalizeTermName(raw) {
 
 async function fetchPage(params) {
   const url = params ? `${BASE}?${params}` : BASE;
-  const res = await fetch(url, { headers: { 'User-Agent': UA } });
-  if (!res.ok) throw new Error(`UNC class search ${res.status} for ${url}`);
-  return res.text();
+  let lastErr;
+  for (let attempt = 0; attempt <= RETRIES; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 500 * attempt));
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': UA } });
+      if (!res.ok) throw new Error(`UNC class search ${res.status} for ${url}`);
+      return res.text();
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr;
 }
 
 function embeddedJson(html, id) {
@@ -144,7 +154,7 @@ export async function fetchUncCatalog(termCode, onProgress) {
         onProgress?.(`  warning: ${subject}: ${err.message}`);
       }
       done++;
-      if (done % 50 === 0) onProgress?.(`Searched ${done}/${subjects.length} subjects (${allRows.length} sections so far)…`);
+      if (done % 25 === 0) onProgress?.(`Searched ${done}/${subjects.length} subjects (${allRows.length} sections so far)…`);
     }
   }
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
