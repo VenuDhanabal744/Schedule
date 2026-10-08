@@ -14,6 +14,10 @@ const ENV_FILE = path.join(__dirname, '..', '.env');
 
 if (fs.existsSync(ENV_FILE)) process.loadEnvFile(ENV_FILE);
 const SIS_KEY = process.env.SIS_API_KEY?.trim() || null;
+// Importing scrapes the registrar (with our SIS key) and overwrites catalog files,
+// so by default only requests from this machine may do it. On a public deploy the
+// committed catalogs are served read-only; set ALLOW_IMPORT=1 to override.
+const ALLOW_ANY_IMPORT = process.env.ALLOW_IMPORT === '1';
 
 const SCHOOLS = {
   jhu: { name: 'Johns Hopkins', rmpName: 'Johns Hopkins University' },
@@ -24,6 +28,10 @@ const SCHOOLS = {
 
 const app = express();
 app.use(express.json());
+
+const isLoopback = (req) =>
+  ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
+const canImport = (req) => ALLOW_ANY_IMPORT || isLoopback(req);
 
 const slug = (s) => s.replace(/[^a-z0-9]+/gi, '_');
 const termFile = (school, term) => path.join(DATA_DIR, `courses-${school}-${slug(term)}.json`);
@@ -74,6 +82,7 @@ app.get('/api/terms', async (req, res) => {
   res.json({
     school,
     hasKey: school === 'jhu' ? !!SIS_KEY : true,
+    canImport: canImport(req),
     available,
     imported,
     sampleTerm: school === 'jhu' ? SAMPLE_TERM : null,
@@ -81,14 +90,25 @@ app.get('/api/terms', async (req, res) => {
   });
 });
 
+// A fresh import with far fewer courses than the catalog it would replace almost
+// always means the registrar failed partway (rate limits, outages), not that the
+// term shrank — keep the existing file rather than clobbering it.
+const MIN_KEEP_RATIO = 0.5;
+let importInProgress = false;
+
 // Import full catalog for a term. Streams progress lines as plain text.
 app.post('/api/import', async (req, res) => {
+  if (!canImport(req)) {
+    return res.status(403).json({ error: 'Importing is disabled on this server' });
+  }
   const { school = 'jhu', term, code } = req.body ?? {};
   if (!SCHOOLS[school]) return res.status(400).json({ error: `Unknown school "${school}"` });
   if (!term) return res.status(400).json({ error: 'term is required' });
   if (school === 'jhu' && !SIS_KEY) {
     return res.status(400).json({ error: 'No SIS_API_KEY configured in .env' });
   }
+  if (importInProgress) return res.status(409).json({ error: 'Another import is running' });
+  importInProgress = true;
 
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.setHeader('X-Accel-Buffering', 'no');
@@ -108,14 +128,30 @@ app.post('/api/import', async (req, res) => {
       courses = normalizeUncCatalog(rows);
       progress(`normalized ${rows.length} section rows`);
     }
+    const file = termFile(school, term);
+    if (!courses.length) throw new Error('import returned no courses — keeping existing data');
+    if (fs.existsSync(file)) {
+      const prev = JSON.parse(fs.readFileSync(file, 'utf8')).courses?.length ?? 0;
+      if (courses.length < prev * MIN_KEEP_RATIO) {
+        throw new Error(
+          `import returned ${courses.length} courses vs ${prev} already saved — ` +
+            'looks incomplete, keeping existing data'
+        );
+      }
+    }
     fs.mkdirSync(DATA_DIR, { recursive: true });
+    // write then rename so a crash mid-write can't leave a truncated catalog
+    const tmp = `${file}.tmp`;
     fs.writeFileSync(
-      termFile(school, term),
+      tmp,
       JSON.stringify({ school, term, importedAt: new Date().toISOString(), courses })
     );
+    fs.renameSync(tmp, file);
     res.write(`done: ${courses.length} courses\n`);
   } catch (err) {
     res.write(`error: ${err.message}\n`);
+  } finally {
+    importInProgress = false;
   }
   res.end();
 });
@@ -123,7 +159,9 @@ app.post('/api/import', async (req, res) => {
 app.get('/api/courses', (req, res) => {
   const school = String(req.query.school ?? 'jhu');
   const term = req.query.term;
-  if (!term) return res.status(400).json({ error: 'term is required' });
+  // school goes into a file path unslugged — it must be one we know
+  if (!SCHOOLS[school]) return res.status(400).json({ error: `Unknown school "${school}"` });
+  if (typeof term !== 'string' || !term) return res.status(400).json({ error: 'term is required' });
   if (school === 'jhu' && term === SAMPLE_TERM) {
     return res.json({ school, term, courses: SAMPLE_COURSES });
   }

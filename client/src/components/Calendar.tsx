@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import type { Course, Meeting, Section, Selected } from '../types';
-import { meetingsConflict, fmtTime } from '../schedule';
+import { meetingsConflict, fmtTime, sectionCanceled } from '../schedule';
 import { useRatings } from '../useRatings';
 import { RatingBadge } from './RatingBadge';
 import { LockIcon } from './LockIcon';
@@ -209,7 +209,7 @@ export function Calendar({
     const course = courseMap.get(activeDrag.code);
     const current = selected.find((s) => s.code === activeDrag.code)?.sectionIdx;
     course?.sections.forEach((section, i) => {
-      if (i !== current && section.meetings.length) {
+      if (i !== current && section.meetings.length && !sectionCanceled(section)) {
         ghosts.push({
           code: activeDrag.code,
           section,

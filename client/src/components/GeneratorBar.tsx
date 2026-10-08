@@ -161,6 +161,11 @@ export function GeneratorBar({
               {genState.impossible.length === 1 ? 's' : 've'} no section matching your
               constraints
             </span>
+          ) : genState.count === 0 && genState.truncated ? (
+            <span className="gen-error">
+              Stopped searching before finding a schedule — try loosening the break limits
+              or locking a class
+            </span>
           ) : genState.count === 0 ? (
             <span className="gen-error">
               No conflict-free combination exists with these constraints

@@ -5,6 +5,7 @@ export type TermOption = { name: string; code: string };
 export type TermsInfo = {
   school: string;
   hasKey: boolean;
+  canImport: boolean; // false on a public deploy: only committed catalogs are served
   available: TermOption[];
   imported: string[];
   sampleTerm: string | null;
@@ -21,7 +22,20 @@ export async function fetchCourses(school: string, term: string): Promise<Course
     `/api/courses?school=${encodeURIComponent(school)}&term=${encodeURIComponent(term)}`
   );
   if (!res.ok) throw new Error((await res.json()).error ?? 'Failed to load courses');
-  const data = await res.json();
+  const data: { courses: Course[] } = await res.json();
+  // Every registrar's feed occasionally repeats a meeting row verbatim; left in,
+  // a section looks like it overlaps itself and fails any min-break constraint.
+  for (const c of data.courses) {
+    for (const s of c.sections) {
+      const seen = new Set<string>();
+      s.meetings = s.meetings.filter((m) => {
+        const key = `${[...m.days].sort().join('')}:${m.start}-${m.end}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+  }
   return data.courses;
 }
 
