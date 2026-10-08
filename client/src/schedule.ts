@@ -93,12 +93,33 @@ export type GenOptions = {
 
 export type GenResult = {
   schedules: number[][]; // per course in input order, chosen section index
+  // the search stopped before checking every combination, or found more
+  // schedules than are returned
   truncated: boolean;
   // courses with no section passing constraints (blocks all schedules)
   impossible: string[];
 };
 
-const CAP = 1000;
+// Schedules returned to page through, best first.
+const KEEP = 1000;
+// Complete schedules scored before the search stops. Sorting happens over all
+// of them, so "best" is the best of up to this many, not of the first KEEP.
+const MAX_FOUND = 50_000;
+// Section placements tried before giving up, so impossible constraint sets
+// (e.g. a max break nothing can satisfy) can't freeze the page.
+const MAX_STEPS = 1_500_000;
+
+// Smallest same-day distance between two sections' meetings (negative = overlap).
+function minDayDistance(a: Section, b: Section): number {
+  let min = Infinity;
+  for (const ma of a.meetings) {
+    for (const mb of b.meetings) {
+      if (!ma.days.some((d) => mb.days.includes(d))) continue;
+      min = Math.min(min, Math.max(ma.start - mb.end, mb.start - ma.end));
+    }
+  }
+  return min;
+}
 
 // Score a schedule: lower is better. Sum of gaps between classes plus a small
 // penalty per day on campus, so compact schedules sort first.
@@ -158,54 +179,108 @@ export function generateSchedules(
   const impossible = courses.filter((_, i) => valid[i].length === 0).map((c) => c.code);
   if (impossible.length) return { schedules: [], truncated: false, impossible };
 
-  // Order courses by fewest options first: prunes the search tree faster.
-  const order = courses.map((_, i) => i).sort((a, b) => valid[a].length - valid[b].length);
+  const n = courses.length;
+  const sec = (ci: number, a: number) => courses[ci].sections[valid[ci][a]];
+  // Two classes closer than minGap anywhere on a day means some consecutive
+  // pair is too, so pairwise compatibility can enforce minGap (and conflicts,
+  // which are a negative distance) up front.
+  const minGap = constraints.minGap ?? 0;
+  // compat[ci][a][cj][b]: option a of course ci can coexist with option b of cj
+  const compat: Uint8Array[][][] = valid.map((opsI, ci) =>
+    opsI.map((_, a) =>
+      valid.map((opsJ, cj) =>
+        cj === ci
+          ? new Uint8Array(0)
+          : Uint8Array.from(opsJ, (_, b) => (minDayDistance(sec(ci, a), sec(cj, b)) >= minGap ? 1 : 0))
+      )
+    )
+  );
+
+  // A break longer than maxGap in a partial schedule is fatal unless some
+  // still-unplaced course has an option with a meeting that fits inside it.
+  function breaksFillable(domains: number[][], combo: number[]): boolean {
+    const maxGap = constraints.maxGap;
+    if (maxGap == null) return true;
+    const byDay: Record<string, Meeting[]> = {};
+    combo.forEach((si, ci) => {
+      if (si === -1) return;
+      for (const m of courses[ci].sections[si].meetings) {
+        for (const d of m.days) (byDay[d] ??= []).push(m);
+      }
+    });
+    for (const [day, blocks] of Object.entries(byDay)) {
+      blocks.sort((x, y) => x.start - y.start);
+      for (let i = 1; i < blocks.length; i++) {
+        const from = blocks[i - 1].end;
+        const to = blocks[i].start;
+        if (to - from <= maxGap) continue;
+        const fillable = domains.some(
+          (dom, cj) =>
+            combo[cj] === -1 &&
+            dom.some((b) =>
+              sec(cj, b).meetings.some(
+                (m) => m.days.includes(day) && m.start >= from && m.end <= to
+              )
+            )
+        );
+        if (!fillable) return false;
+      }
+    }
+    return true;
+  }
 
   const results: number[][] = [];
-  let truncated = false;
-  const combo: number[] = new Array(courses.length).fill(-1);
+  let stopped = false;
+  let steps = 0;
+  const combo: number[] = new Array(n).fill(-1);
 
-  function backtrack(pos: number) {
-    if (truncated) return;
-    if (pos === order.length) {
+  // domains[cj]: positions in valid[cj] still compatible with everything placed.
+  // Each step places the course with the fewest options left, then prunes the
+  // others' options; a course left with none means this branch is dead.
+  function backtrack(domains: number[][], remaining: number) {
+    if (remaining === 0) {
       if (gapsOk(courses, combo, constraints.minGap, constraints.maxGap)) {
         results.push([...combo]);
-        if (results.length >= CAP) truncated = true;
+        if (results.length >= MAX_FOUND) stopped = true;
       }
       return;
     }
-    const ci = order[pos];
-    for (const si of valid[ci]) {
-      const sec = courses[ci].sections[si];
-      let ok = true;
-      for (let p = 0; p < pos; p++) {
-        const pj = order[p];
-        if (sectionsConflict(sec, courses[pj].sections[combo[pj]])) {
-          ok = false;
-          break;
-        }
+    let ci = -1;
+    for (let j = 0; j < n; j++) {
+      if (combo[j] === -1 && (ci === -1 || domains[j].length < domains[ci].length)) ci = j;
+    }
+    for (const a of domains[ci]) {
+      if (++steps > MAX_STEPS) stopped = true;
+      if (stopped) return;
+      combo[ci] = valid[ci][a];
+      const next = domains.slice();
+      let dead = false;
+      for (let j = 0; j < n && !dead; j++) {
+        if (combo[j] !== -1) continue;
+        const row = compat[ci][a][j];
+        next[j] = domains[j].filter((b) => row[b]);
+        dead = next[j].length === 0;
       }
-      if (ok) {
-        combo[ci] = si;
-        backtrack(pos + 1);
-        combo[ci] = -1;
-        if (truncated) return;
-      }
+      if (!dead && breaksFillable(next, combo)) backtrack(next, remaining - 1);
+      combo[ci] = -1;
     }
   }
-  backtrack(0);
+  backtrack(
+    valid.map((ops) => ops.map((_, a) => a)),
+    n
+  );
 
-  if (opts.sortBy === 'professors') {
-    const profScore = new Map(results.map((r) => [r, scheduleProfScore(courses, r, opts.ratingOf)]));
-    results.sort(
-      (a, b) =>
-        profScore.get(b)! - profScore.get(a)! ||
-        scoreSchedule(courses, a) - scoreSchedule(courses, b)
-    );
-  } else {
-    results.sort((a, b) => scoreSchedule(courses, a) - scoreSchedule(courses, b));
-  }
-  return { schedules: results, truncated, impossible: [] };
+  const scored = results.map((combo) => ({
+    combo,
+    compact: scoreSchedule(courses, combo),
+    prof: opts.sortBy === 'professors' ? scheduleProfScore(courses, combo, opts.ratingOf) : 0,
+  }));
+  scored.sort((a, b) => b.prof - a.prof || a.compact - b.compact);
+  return {
+    schedules: scored.slice(0, KEEP).map((s) => s.combo),
+    truncated: stopped || scored.length > KEEP,
+    impossible: [],
+  };
 }
 
 export function fmtTime(mins: number): string {

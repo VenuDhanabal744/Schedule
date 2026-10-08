@@ -200,7 +200,7 @@ export default function App() {
       courseOrder: chosen.map((c) => c.code),
       schedules: best ? result.schedules.slice(0, 1) : result.schedules,
       idx: 0,
-      truncated: !best && result.truncated,
+      truncated: result.truncated,
       impossible: result.impossible,
       best,
     };
