@@ -291,6 +291,8 @@ export default function App() {
     for (const a of termsInfo.available) {
       if (!show(a.name)) continue;
       const imported = termsInfo.imported.includes(a.name);
+      // picking a term that isn't imported triggers an import the server would refuse
+      if (!imported && !termsInfo.canImport) continue;
       opts.push({ value: a.name, code: a.code, label: imported ? `${a.name} ✓` : a.name, imported });
     }
     if (termsInfo.sampleTerm) {

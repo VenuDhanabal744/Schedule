@@ -1,7 +1,7 @@
 {
   "name": "claude-semesterly",
   "version": "1.0.0",
-  "description": "JHU course scheduling app: drag-and-drop planner, schedule generator, professor ratings",
+  "description": "JHU, Temple & UNC course scheduling app: drag-and-drop planner, schedule generator, professor ratings",
   "type": "module",
   "scripts": {
     "server": "node server/index.js",

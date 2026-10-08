@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import type { Course, Selected } from '../types';
-import { fmtMeetings } from '../schedule';
+import { fmtMeetings, sectionIsOpen } from '../schedule';
 import { useRatings } from '../useRatings';
 import { RatingBadge } from './RatingBadge';
 import type { DragItem } from './Calendar';
@@ -154,7 +154,7 @@ export function Sidebar({
     return courses.filter((c) => {
       if (dept && c.department !== dept) return false;
       if (level && c.level !== level) return false;
-      if (openOnly && !c.sections.some((s) => !s.status || s.status === 'Open')) return false;
+      if (openOnly && !c.sections.some(sectionIsOpen)) return false;
       if (!q) return true;
       return (
         c.code.toLowerCase().includes(q) ||

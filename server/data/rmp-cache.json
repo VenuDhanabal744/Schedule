@@ -1143,6 +1143,256 @@
           "numRatings": 1,
           "wouldTakeAgain": 100,
           "url": "https://www.ratemyprofessors.com/professor/3100508"
+        },
+        "rhianon visinsky": {
+          "name": "Rhianon Visinsky",
+          "department": "English",
+          "avgRating": 3.7,
+          "avgDifficulty": 2.7,
+          "numRatings": 10,
+          "wouldTakeAgain": 70,
+          "url": "https://www.ratemyprofessors.com/professor/2426909"
+        },
+        "matteo bottacchiari": {
+          "name": "Matteo Salvadore",
+          "department": "History",
+          "avgRating": 4.1,
+          "avgDifficulty": 2.8,
+          "numRatings": 9,
+          "wouldTakeAgain": -1,
+          "url": "https://www.ratemyprofessors.com/professor/619762"
+        },
+        "sebastian castillo": {
+          "name": "Sebastian Castillo",
+          "department": "English",
+          "avgRating": 4.6,
+          "avgDifficulty": 2.7,
+          "numRatings": 13,
+          "wouldTakeAgain": 100,
+          "url": "https://www.ratemyprofessors.com/professor/2113025"
+        },
+        "kelly l. pietrucha": {
+          "name": "L. Dunbar",
+          "department": "Women's Studies",
+          "avgRating": 4.4,
+          "avgDifficulty": 2,
+          "numRatings": 7,
+          "wouldTakeAgain": -1,
+          "url": "https://www.ratemyprofessors.com/professor/927237"
+        },
+        "seth a. steinbacher": {
+          "name": "Seth Steinbacher",
+          "department": "English",
+          "avgRating": 4.1,
+          "avgDifficulty": 2.4,
+          "numRatings": 20,
+          "wouldTakeAgain": 80,
+          "url": "https://www.ratemyprofessors.com/professor/1142302"
+        },
+        "harriet bradley": {
+          "name": "Harriet Freidenreich",
+          "department": "History",
+          "avgRating": 3,
+          "avgDifficulty": 5,
+          "numRatings": 1,
+          "wouldTakeAgain": -1,
+          "url": "https://www.ratemyprofessors.com/professor/1242704"
+        },
+        "tomas m. rodriguez": null,
+        "michael j. usino": {
+          "name": "Mike Usino",
+          "department": "English",
+          "avgRating": 4.1,
+          "avgDifficulty": 3.3,
+          "numRatings": 39,
+          "wouldTakeAgain": 100,
+          "url": "https://www.ratemyprofessors.com/professor/1523402"
+        },
+        "percell longoria-harris": null,
+        "rota safiri": null,
+        "izzy cihak": {
+          "name": "Izzy Chihak",
+          "department": "Intellectual Heritage",
+          "avgRating": 2.5,
+          "avgDifficulty": 4,
+          "numRatings": 2,
+          "wouldTakeAgain": 50,
+          "url": "https://www.ratemyprofessors.com/professor/2582975"
+        },
+        "rachel l. rascoe": {
+          "name": "L. Dunbar",
+          "department": "Women's Studies",
+          "avgRating": 4.4,
+          "avgDifficulty": 2,
+          "numRatings": 7,
+          "wouldTakeAgain": -1,
+          "url": "https://www.ratemyprofessors.com/professor/927237"
+        },
+        "penina warren": {
+          "name": "Warren Bass",
+          "department": "Film",
+          "avgRating": 3.9,
+          "avgDifficulty": 3.4,
+          "numRatings": 26,
+          "wouldTakeAgain": 28.5714,
+          "url": "https://www.ratemyprofessors.com/professor/201603"
+        },
+        "margaret wise": {
+          "name": "Margaret Wise",
+          "department": "English",
+          "avgRating": 3,
+          "avgDifficulty": 2.5,
+          "numRatings": 2,
+          "wouldTakeAgain": 33.3333,
+          "url": "https://www.ratemyprofessors.com/professor/2956508"
+        },
+        "kathy m. houff": {
+          "name": "Kathy Houff",
+          "department": "English",
+          "avgRating": 4.2,
+          "avgDifficulty": 2.5,
+          "numRatings": 59,
+          "wouldTakeAgain": 79.3103,
+          "url": "https://www.ratemyprofessors.com/professor/522582"
+        },
+        "autumn h. thomas": {
+          "name": "Yoon H. Lee",
+          "department": "Special Education",
+          "avgRating": 3.8,
+          "avgDifficulty": 2.4,
+          "numRatings": 8,
+          "wouldTakeAgain": 100,
+          "url": "https://www.ratemyprofessors.com/professor/1723714"
+        },
+        "emily boudreau": {
+          "name": "Emily Threinen",
+          "department": "Music",
+          "avgRating": 2.5,
+          "avgDifficulty": 4,
+          "numRatings": 2,
+          "wouldTakeAgain": 0,
+          "url": "https://www.ratemyprofessors.com/professor/1881832"
+        },
+        "gregory winch": {
+          "name": "Gregory Smutzer",
+          "department": "Biology",
+          "avgRating": 1.5,
+          "avgDifficulty": 4.2,
+          "numRatings": 20,
+          "wouldTakeAgain": 10,
+          "url": "https://www.ratemyprofessors.com/professor/2689625"
+        },
+        "rob faunce": {
+          "name": "Rob Faunce",
+          "department": "English",
+          "avgRating": 4,
+          "avgDifficulty": 3.2,
+          "numRatings": 29,
+          "wouldTakeAgain": 75.8621,
+          "url": "https://www.ratemyprofessors.com/professor/2308940"
+        },
+        "ross markman": {
+          "name": "Ross Markman",
+          "department": "Education",
+          "avgRating": 4.5,
+          "avgDifficulty": 2.8,
+          "numRatings": 37,
+          "wouldTakeAgain": 84.375,
+          "url": "https://www.ratemyprofessors.com/professor/1917366"
+        },
+        "mohamed salem": null,
+        "matthew j. soderblom": {
+          "name": "Matthew Soderblom",
+          "department": "English",
+          "avgRating": 5,
+          "avgDifficulty": 2,
+          "numRatings": 3,
+          "wouldTakeAgain": 100,
+          "url": "https://www.ratemyprofessors.com/professor/2790328"
+        },
+        "adryan corcione": null,
+        "delila matara": null,
+        "jenna topping": {
+          "name": "Jenna Sterling",
+          "department": "English",
+          "avgRating": 4.3,
+          "avgDifficulty": 2.9,
+          "numRatings": 14,
+          "wouldTakeAgain": 78.5714,
+          "url": "https://www.ratemyprofessors.com/professor/2617582"
+        },
+        "avery lynn": {
+          "name": "Derek Avery",
+          "department": "Business",
+          "avgRating": 3.3,
+          "avgDifficulty": 3.5,
+          "numRatings": 11,
+          "wouldTakeAgain": -1,
+          "url": "https://www.ratemyprofessors.com/professor/1587131"
+        },
+        "karoline schaufler": null,
+        "amy l. friedman": {
+          "name": "L. Dunbar",
+          "department": "Women's Studies",
+          "avgRating": 4.4,
+          "avgDifficulty": 2,
+          "numRatings": 7,
+          "wouldTakeAgain": -1,
+          "url": "https://www.ratemyprofessors.com/professor/927237"
+        },
+        "elizabeth farnsworth": {
+          "name": "Elizabeth Tenison",
+          "department": "Psychology",
+          "avgRating": 5,
+          "avgDifficulty": 1.5,
+          "numRatings": 2,
+          "wouldTakeAgain": 100,
+          "url": "https://www.ratemyprofessors.com/professor/2812830"
+        },
+        "emily c. bormann": {
+          "name": "C. Lin",
+          "department": "Physics",
+          "avgRating": 3.1,
+          "avgDifficulty": 4.4,
+          "numRatings": 52,
+          "wouldTakeAgain": 0,
+          "url": "https://www.ratemyprofessors.com/professor/568147"
+        },
+        "riley thomas": {
+          "name": "Keith Riley",
+          "department": "History",
+          "avgRating": 4.5,
+          "avgDifficulty": 2,
+          "numRatings": 4,
+          "wouldTakeAgain": 100,
+          "url": "https://www.ratemyprofessors.com/professor/2328827"
+        },
+        "patricia marie p. velez": {
+          "name": "Marie Pareja",
+          "department": "Art History",
+          "avgRating": 5,
+          "avgDifficulty": 2,
+          "numRatings": 3,
+          "wouldTakeAgain": 100,
+          "url": "https://www.ratemyprofessors.com/professor/1888611"
+        },
+        "sara minerath": {
+          "name": "Sara Parker",
+          "department": "Theater",
+          "avgRating": 4,
+          "avgDifficulty": 1,
+          "numRatings": 1,
+          "wouldTakeAgain": 0,
+          "url": "https://www.ratemyprofessors.com/professor/2547388"
+        },
+        "karin a. keefe": {
+          "name": "Karin Keefe",
+          "department": "English",
+          "avgRating": 3.8,
+          "avgDifficulty": 4,
+          "numRatings": 8,
+          "wouldTakeAgain": 55.5556,
+          "url": "https://www.ratemyprofessors.com/professor/2749069"
         }
       }
     }

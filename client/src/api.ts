@@ -5,6 +5,7 @@ export type TermOption = { name: string; code: string };
 export type TermsInfo = {
   school: string;
   hasKey: boolean;
+  canImport: boolean; // false on a public deploy: only committed catalogs are served
   available: TermOption[];
   imported: string[];
   sampleTerm: string | null;

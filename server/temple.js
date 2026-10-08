@@ -18,9 +18,19 @@ export async function fetchTempleTerms() {
   });
   if (!res.ok) throw new Error(`Temple terms request failed (${res.status})`);
   const terms = await res.json();
+  // "View Only" marks terms closed to registration. Old ones are history, but a
+  // view-only term newer than every open one is an upcoming term whose schedule
+  // is already published — exactly what a planner wants. Codes sort as YYYYTT.
+  const viewOnly = (t) => /\(view only\)/i.test(t.description);
+  const newestOpen = terms
+    .filter((t) => !viewOnly(t))
+    .reduce((max, t) => (t.code > max ? t.code : max), '');
   return terms
-    .filter((t) => !/view only/i.test(t.description))
-    .map((t) => ({ code: t.code, name: normalizeTermName(t.description) }));
+    .filter((t) => !viewOnly(t) || t.code > newestOpen)
+    .map((t) => ({
+      code: t.code,
+      name: normalizeTermName(t.description.replace(/\s*\(view only\)\s*/i, '').trim()),
+    }));
 }
 
 // "1140" -> minutes since midnight
@@ -64,45 +74,77 @@ function decodeEntities(s) {
     .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n));
 }
 
-export async function fetchTempleCatalog(termCode, onProgress) {
-  // establish a search session for this term and keep its cookies
+const REQUEST_TIMEOUT_MS = 60_000;
+const SESSION_ATTEMPTS = 4;
+
+// Establish a search session for this term. Banner keys search state on the
+// cookies plus a client-chosen uniqueSessionId, as its own web page does.
+async function startSession(termCode) {
+  const uniqueSessionId = `sched${Date.now()}${Math.random().toString(36).slice(2, 8)}`;
   const init = await fetch(`${BASE}/term/search?mode=search`, {
     method: 'POST',
     headers: {
       'User-Agent': UA,
       'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: `term=${encodeURIComponent(termCode)}`,
+    body: `term=${encodeURIComponent(termCode)}&uniqueSessionId=${uniqueSessionId}`,
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   if (!init.ok) throw new Error(`Temple session request failed (${init.status})`);
   const cookies = (init.headers.getSetCookie?.() ?? [])
     .map((c) => c.split(';')[0])
     .join('; ');
+  return { cookies, uniqueSessionId };
+}
 
-  const records = [];
-  let total = Infinity;
-  for (let offset = 0; offset < total; offset += PAGE_SIZE) {
-    const url =
-      `${BASE}/searchResults/searchResults?txt_term=${encodeURIComponent(termCode)}` +
-      `&pageOffset=${offset}&pageMaxSize=${PAGE_SIZE}&sortColumn=subjectDescription&sortDirection=asc`;
-    let res;
-    for (let attempt = 0; ; attempt++) {
-      if (attempt > 0) await new Promise((r) => setTimeout(r, 500 * attempt));
-      res = await fetch(url, {
-        headers: { 'User-Agent': UA, Accept: 'application/json', Cookie: cookies },
-      }).catch((err) => (attempt < 3 ? null : Promise.reject(err)));
-      if (res?.ok) break;
-      if (attempt >= 3) throw new Error(`Temple search failed at offset ${offset} (${res?.status})`);
+async function fetchPage(termCode, session, offset) {
+  const url =
+    `${BASE}/searchResults/searchResults?txt_term=${encodeURIComponent(termCode)}` +
+    `&uniqueSessionId=${session.uniqueSessionId}` +
+    `&pageOffset=${offset}&pageMaxSize=${PAGE_SIZE}&sortColumn=subjectDescription&sortDirection=asc`;
+  for (let attempt = 0; ; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 1000 * attempt));
+    try {
+      // without a timeout, a request Banner never answers hangs the import forever
+      const res = await fetch(url, {
+        headers: { 'User-Agent': UA, Accept: 'application/json', Cookie: session.cookies },
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const body = await res.json();
+      if (!body.success && !Array.isArray(body.data)) {
+        throw new Error('no data — session may have expired');
+      }
+      return body;
+    } catch (err) {
+      if (attempt >= 3) throw new Error(`Temple search failed at offset ${offset}: ${err.message}`);
     }
-    const body = await res.json();
-    if (!body.success && !Array.isArray(body.data)) {
-      throw new Error('Temple search returned no data — session may have expired');
-    }
-    total = body.totalCount ?? 0;
-    records.push(...(body.data ?? []));
-    onProgress?.(`Fetched ${Math.min(offset + PAGE_SIZE, total)} of ${total} sections…`);
   }
-  return records;
+}
+
+export async function fetchTempleCatalog(termCode, onProgress) {
+  // Banner intermittently answers a fresh session with zero results, or drops a
+  // session midway; either way, start over with a new session.
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const session = await startSession(termCode);
+      const records = [];
+      let total = Infinity;
+      for (let offset = 0; offset < total; offset += PAGE_SIZE) {
+        const body = await fetchPage(termCode, session, offset);
+        total = body.totalCount ?? 0;
+        if (!total) throw new Error('search returned 0 sections');
+        if (!body.data?.length) throw new Error(`empty page at offset ${offset} of ${total}`);
+        records.push(...body.data);
+        onProgress?.(`Fetched ${Math.min(offset + PAGE_SIZE, total)} of ${total} sections…`);
+      }
+      return records;
+    } catch (err) {
+      if (attempt >= SESSION_ATTEMPTS) throw err;
+      onProgress?.(`  ${err.message}; retrying with a new session (${attempt}/${SESSION_ATTEMPTS - 1})`);
+      await new Promise((r) => setTimeout(r, 2000 * attempt));
+    }
+  }
 }
 
 export function normalizeTempleCatalog(records) {

@@ -1,6 +1,6 @@
 # Schedule — JHU, Temple & UNC Course Planner
 
-A course-scheduling web app for Johns Hopkins, Temple, and UNC-Chapel Hill: search the full JHU catalog, build your
+A course-scheduling web app for Johns Hopkins, Temple, and UNC-Chapel Hill: search each school's full catalog, build your
 week with drag-and-drop, auto-generate every conflict-free schedule from your course list
 and constraints, and see RateMyProfessors ratings next to each instructor.
 
@@ -23,7 +23,8 @@ Created by Venu Dhanabal.
 
 ## Deploying (Render)
 
-The repo already includes the Fall 2026 catalog, so the site works immediately.
+The repo already includes Fall 2026 catalogs for all three schools plus Temple's Spring 2027,
+so the site works immediately.
 
 1. Push this repo to GitHub.
 2. On [render.com](https://render.com): **New → Web Service**, connect the repo.
@@ -33,8 +34,14 @@ The repo already includes the Fall 2026 catalog, so the site works immediately.
    - **Environment variable:** `SIS_API_KEY` = your key
 4. Deploy. The server serves both the app and the API on one URL.
 
-Note: on free/ephemeral hosting, catalogs imported at runtime reset on redeploy —
-to add a new term permanently, import it locally and commit the JSON in `server/data/`.
+The deployed site serves the committed catalogs read-only: importing (which scrapes the
+registrar and overwrites catalog files) is only allowed from requests on the same machine,
+so the term picker there lists just the imported terms. To add a term, run the app
+locally, pick the term to import it, and commit the new JSON in `server/data/`. (Set
+`ALLOW_IMPORT=1` to allow imports from anywhere — only on a server you trust.)
+
+Temple publishes upcoming terms as "View Only" before registration opens; those show up
+in the picker so you can plan ahead as soon as the schedule is out.
 
 ## Features
 

@@ -9,8 +9,15 @@ export function sectionsConflict(a: Section, b: Section): boolean {
   return a.meetings.some((ma) => b.meetings.some((mb) => meetingsConflict(ma, mb)));
 }
 
+// Registrars word status differently: JHU "Open" / "Reserved Open" / "Approval
+// Required" / "Waitlist Only" / "Closed" / "Canceled", Temple and UNC "Open" /
+// "Waitlist Only" / "Full". A section is open if it has seats to register into.
+export const sectionCanceled = (s: Section) => /cancel/i.test(s.status);
+export const sectionIsOpen = (s: Section) =>
+  !s.status || !/closed|full|waitlist|cancel/i.test(s.status);
+
 export function sectionPassesConstraints(s: Section, c: Constraints): boolean {
-  if (c.onlyOpen && s.status && s.status !== 'Open') return false;
+  if (c.onlyOpen && !sectionIsOpen(s)) return false;
   for (const m of s.meetings) {
     if (c.earliest != null && m.start < c.earliest) return false;
     if (c.latest != null && m.end > c.latest) return false;
@@ -123,15 +130,17 @@ export function generateSchedules(
   const valid: number[][] = courses.map((c, ci) => {
     const lock = opts.lockedIdx?.[ci];
     if (lock != null && c.sections[lock]) return [lock];
-    // Prefer sections with actual meeting times; a "Time TBA" section only counts
-    // when the whole course has no timed sections (online/independent work).
-    const timed = c.sections.map((_, i) => i).filter((i) => c.sections[i].meetings.length > 0);
-    const pool = timed.length ? timed : c.sections.map((_, i) => i);
+    // Canceled sections are never an option. Prefer sections with actual meeting
+    // times; a "Time TBA" section only counts when the whole course has no timed
+    // sections (online/independent work).
+    const live = c.sections.map((_, i) => i).filter((i) => !sectionCanceled(c.sections[i]));
+    const timed = live.filter((i) => c.sections[i].meetings.length > 0);
+    const pool = timed.length ? timed : live;
     const passing = pool.filter((i) => sectionPassesConstraints(c.sections[i], constraints));
     // Collapse sections that meet at identical times (same class, different
     // professor) into one option. The representative prefers open status, then
     // the best-rated professor.
-    const isOpen = (j: number) => !c.sections[j].status || c.sections[j].status === 'Open';
+    const isOpen = (j: number) => sectionIsOpen(c.sections[j]);
     const beats = (i: number, prev: number) => {
       if (isOpen(i) !== isOpen(prev)) return isOpen(i);
       const ri = sectionRating(c.sections[i], opts.ratingOf) ?? -1;
