@@ -12,6 +12,7 @@ import {
 } from './api';
 import type { TermsInfo } from './api';
 import { generateSchedules, scheduleProfScore } from './schedule';
+import { useRatings } from './useRatings';
 import { Calendar } from './components/Calendar';
 import type { DragItem } from './components/Calendar';
 import { Sidebar } from './components/Sidebar';
@@ -75,6 +76,9 @@ export default function App() {
   const [genBusy, setGenBusy] = useState(false);
   const [activeDrag, setActiveDrag] = useState<DragItem | null>(null);
   const [importLog, setImportLog] = useState<string[] | null>(null);
+  // schedules pinned for side-by-side comparison, saved per school+term
+  const [pinned, setPinned] = useState<Selected[][]>([]);
+  const [comparing, setComparing] = useState(false);
   const importing = useRef(false);
 
   // load terms for the active school; prefer a real imported term over the demo
@@ -104,9 +108,15 @@ export default function App() {
     setCourses([]);
     setGen(null);
     setLoadError(null);
+    setComparing(false);
     fetchCourses(school, term)
       .then((cs) => {
         setCourses(cs);
+        try {
+          setPinned(JSON.parse(localStorage.getItem(`pinned:${school}:${term}`) ?? '[]'));
+        } catch {
+          setPinned([]);
+        }
         try {
           const raw =
             localStorage.getItem(`selected:${school}:${term}`) ??
@@ -132,7 +142,22 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, term, courses]);
 
+  const savePinned = (next: Selected[][]) => {
+    setPinned(next);
+    localStorage.setItem(`pinned:${school}:${term}`, JSON.stringify(next));
+    if (!next.length) setComparing(false);
+  };
+  const pinCurrent = () => savePinned([...pinned, selected.map((s) => ({ ...s }))]);
+
   const courseMap = useMemo(() => new Map(courses.map((c) => [c.code, c])), [courses]);
+  // re-render the compare headers' professor averages once their ratings load
+  useRatings(
+    pinned.flatMap((sel) =>
+      sel.flatMap((s) =>
+        s.sectionIdx == null ? [] : courseMap.get(s.code)?.sections[s.sectionIdx]?.instructors ?? []
+      )
+    )
+  );
 
   const colorOf = useMemo(() => {
     const order = selected.map((s) => s.code);
@@ -374,6 +399,57 @@ export default function App() {
           <div className="topbar-credit">Created by Venu Dhanabal</div>
         </header>
 
+        {comparing ? (
+          <div className="compare-view">
+            <div className="compare-bar">
+              <button onClick={() => setComparing(false)}>‹ Back to editor</button>
+              <span className="compare-hint">Load a schedule to keep editing it.</span>
+            </div>
+            <div className="compare-grid">
+              {pinned.map((sel, i) => {
+                const placed = sel.filter((s) => s.sectionIdx != null && courseMap.has(s.code));
+                const avg = scheduleProfScore(
+                  placed.map((s) => courseMap.get(s.code)!),
+                  placed.map((s) => s.sectionIdx!),
+                  ratingOf
+                );
+                return (
+                  <div key={i} className="compare-pane">
+                    <div className="compare-pane-head">
+                      <strong>Schedule {i + 1}</strong>
+                      <span className="gen-prof">professors avg ★ {avg.toFixed(1)}</span>
+                      <button
+                        onClick={() => {
+                          setSelected(sel.map((s) => ({ ...s })));
+                          setGen(null);
+                          setComparing(false);
+                        }}
+                      >
+                        Load
+                      </button>
+                      <button
+                        className="btn-remove"
+                        aria-label={`Remove schedule ${i + 1}`}
+                        onClick={() => savePinned(pinned.filter((_, j) => j !== i))}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <Calendar
+                      courseMap={courseMap}
+                      selected={sel}
+                      colorOf={(code) => Math.max(0, sel.findIndex((s) => s.code === code)) % 8}
+                      activeDrag={null}
+                      hoverTarget={null}
+                      onToggleLock={() => {}}
+                      paneId={`pin${i}-`}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
         <div className="main">
           <Sidebar
             courses={courses}
@@ -399,6 +475,18 @@ export default function App() {
               onClearGen={() => setGen(null)}
             />
             {loadError && <div className="load-error">{loadError}</div>}
+            <div className="compare-bar">
+              <button
+                onClick={pinCurrent}
+                disabled={!selected.some((s) => s.sectionIdx != null)}
+                title="Save a copy of this schedule to compare side by side"
+              >
+                Pin to compare
+              </button>
+              <button onClick={() => setComparing(true)} disabled={!pinned.length}>
+                Compare pinned ({pinned.length})
+              </button>
+            </div>
             <Calendar
               courseMap={courseMap}
               selected={selected}
@@ -409,6 +497,7 @@ export default function App() {
             />
           </div>
         </div>
+        )}
 
         {importLog && (
           <div className="modal-backdrop">

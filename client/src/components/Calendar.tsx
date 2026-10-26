@@ -66,16 +66,19 @@ function EventBlock({
   top,
   height,
   onToggleLock,
+  paneId,
 }: {
   block: Block;
   top: number;
   height: number;
   onToggleLock: (code: string) => void;
+  paneId?: string;
 }) {
+  // drag ids must be unique across every calendar on screen, so panes prefix theirs
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `event-${block.code}-${block.day}-${block.meeting.start}`,
+    id: `${paneId ?? ''}event-${block.code}-${block.day}-${block.meeting.start}`,
     data: { type: 'event', code: block.code } satisfies DragItem,
-    disabled: block.locked,
+    disabled: block.locked || !!paneId,
   });
   // distinguish a genuine click from the tail end of a drag
   const downPos = useRef<{ x: number; y: number } | null>(null);
@@ -96,6 +99,7 @@ function EventBlock({
         downPos.current = { x: e.clientX, y: e.clientY };
       }}
       onClick={(e) => {
+        if (paneId) return;
         if (
           downPos.current &&
           Math.hypot(e.clientX - downPos.current.x, e.clientY - downPos.current.y) > 6
@@ -168,6 +172,7 @@ export function Calendar({
   activeDrag,
   hoverTarget,
   onToggleLock,
+  paneId,
 }: {
   courseMap: Map<string, Course>;
   selected: Selected[];
@@ -175,6 +180,8 @@ export function Calendar({
   activeDrag: DragItem | null;
   hoverTarget: string | null;
   onToggleLock: (code: string) => void;
+  // set for a read-only comparison pane: no dragging, locking, or ghosts
+  paneId?: string;
 }) {
   // real (placed) blocks
   const placed: {
@@ -334,6 +341,7 @@ export function Calendar({
                   top={(b.meeting.start - startMin) * PXPM}
                   height={(b.meeting.end - b.meeting.start) * PXPM}
                   onToggleLock={onToggleLock}
+                  paneId={paneId}
                 />
               )
             )}

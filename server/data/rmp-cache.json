@@ -1393,6 +1393,34 @@
           "numRatings": 8,
           "wouldTakeAgain": 55.5556,
           "url": "https://www.ratemyprofessors.com/professor/2749069"
+        },
+        "yash rajput": null,
+        "alessio olivieri": {
+          "name": "Deborah Olivieri",
+          "department": "English",
+          "avgRating": 4.5,
+          "avgDifficulty": 1.9,
+          "numRatings": 12,
+          "wouldTakeAgain": 91.6667,
+          "url": "https://www.ratemyprofessors.com/professor/2431853"
+        },
+        "jayakumar gilbert": {
+          "name": "Jayakumar Gilbert",
+          "department": "Chemistry",
+          "avgRating": 4.1,
+          "avgDifficulty": 2.5,
+          "numRatings": 95,
+          "wouldTakeAgain": 86.9565,
+          "url": "https://www.ratemyprofessors.com/professor/733530"
+        },
+        "james d. bloxton": {
+          "name": "James D Bloxton",
+          "department": "Chemistry",
+          "avgRating": 4.2,
+          "avgDifficulty": 2.9,
+          "numRatings": 189,
+          "wouldTakeAgain": 74.1667,
+          "url": "https://www.ratemyprofessors.com/professor/1010415"
         }
       }
     }

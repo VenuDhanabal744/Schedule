@@ -54,6 +54,9 @@ in the picker so you can plan ahead as soon as the schedule is out.
   distinct conflict-free timing combination. "Best schedule" applies the single
   schedule with the best-rated professors that satisfies everything. Locked classes
   stay fixed while everything else permutes.
+- **Compare schedules** — "Pin to compare" saves the current schedule (hand-built or
+  generated); "Compare pinned" shows every pinned schedule side by side, each with its
+  professor average and a Load button to go back to editing it. Pins are kept per term.
 - **Professor ratings** — pulled from RateMyProfessors (unofficial API) and cached in
   `server/data/rmp-cache.json`; shown in search results, My Courses, and on the
   calendar blocks themselves.
