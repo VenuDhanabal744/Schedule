@@ -29,8 +29,11 @@ const SCHOOLS = {
 const app = express();
 app.use(express.json());
 
+// Hosts like Render proxy every visitor through localhost, so a loopback socket
+// alone proves nothing; proxies add X-Forwarded-For, a direct local request doesn't.
 const isLoopback = (req) =>
-  ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
+  ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress) &&
+  !req.headers['x-forwarded-for'];
 const canImport = (req) => ALLOW_ANY_IMPORT || isLoopback(req);
 
 const slug = (s) => s.replace(/[^a-z0-9]+/gi, '_');
