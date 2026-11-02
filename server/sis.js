@@ -5,7 +5,11 @@ const BASE = 'https://sis.jhu.edu/api/classes';
 
 async function sisFetch(path, key) {
   const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}key=${encodeURIComponent(key)}`;
-  const res = await fetch(url, { headers: { Accept: 'application/json' } });
+  // without a timeout, a request SIS never answers hangs the import forever
+  const res = await fetch(url, {
+    headers: { Accept: 'application/json' },
+    signal: AbortSignal.timeout(120_000),
+  });
   const text = await res.text();
   if (!res.ok) {
     throw new Error(`SIS API ${res.status} for ${path}: ${text.slice(0, 300)}`);
@@ -33,15 +37,22 @@ export async function fetchTermCatalog(key, term, onProgress) {
   const records = [];
   for (const school of schools) {
     onProgress?.(`Fetching ${school}…`);
-    try {
-      const recs = await sisFetch(
-        `/${encodeURIComponent(school)}/${encodeURIComponent(term)}`,
-        key
-      );
-      if (Array.isArray(recs)) records.push(...recs);
-    } catch (err) {
-      // Some schools have no offerings for a term; skip but report others' failures.
-      onProgress?.(`  warning: ${school}: ${err.message}`);
+    // A school with no offerings comes back as an empty list, so an error is a
+    // real failure (SIS is flaky): retry, then abort rather than save a catalog
+    // silently missing a whole school.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        const recs = await sisFetch(
+          `/${encodeURIComponent(school)}/${encodeURIComponent(term)}`,
+          key
+        );
+        if (Array.isArray(recs)) records.push(...recs);
+        break;
+      } catch (err) {
+        if (attempt >= 3) throw new Error(`${school}: ${err.message}`);
+        onProgress?.(`  ${school}: ${err.message}; retrying (${attempt}/2)`);
+        await new Promise((r) => setTimeout(r, 3000 * attempt));
+      }
     }
   }
   return records;
@@ -81,12 +92,13 @@ export function parseDays(dow) {
   return [...new Set(days)];
 }
 
-// "1:30PM", "1:30 PM", "13:30" -> minutes since midnight, or null.
+// "1:30PM", "1:30 PM", "13:30" -> minutes since midnight, or null. Trailing
+// labels are ignored: SIS writes e.g. "7:30PM - 10:00PM Screenings".
 export function parseTime(str) {
   if (!str) return null;
   const m = String(str)
     .trim()
-    .match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+    .match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?\b/i);
   if (!m) return null;
   let h = parseInt(m[1], 10);
   const min = parseInt(m[2], 10);
