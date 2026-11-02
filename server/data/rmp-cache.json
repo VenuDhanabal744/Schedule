@@ -547,7 +547,16 @@
           "wouldTakeAgain": 100,
           "url": "https://www.ratemyprofessors.com/professor/2913791"
         },
-        "devenot, nese lisa": null
+        "devenot, nese lisa": null,
+        "li, zhaolin": {
+          "name": "Huajie Li ",
+          "department": "Mathematics",
+          "avgRating": 1.8,
+          "avgDifficulty": 4.3,
+          "numRatings": 39,
+          "wouldTakeAgain": 15,
+          "url": "https://www.ratemyprofessors.com/professor/3033977"
+        }
       }
     },
     "temple": {
