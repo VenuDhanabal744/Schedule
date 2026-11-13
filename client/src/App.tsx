@@ -495,6 +495,7 @@ export default function App() {
                       activeDrag={null}
                       hoverTarget={null}
                       onToggleLock={() => {}}
+                      onInfo={setDetailCode}
                       paneId={`pin${i}-`}
                     />
                   </div>
@@ -512,6 +513,7 @@ export default function App() {
             onAdd={addCourse}
             onRemove={removeCourse}
             onPlace={placeSection}
+            onInfo={setDetailCode}
           />
           <div className="content">
             <GeneratorBar
@@ -557,6 +559,7 @@ export default function App() {
               activeDrag={activeDrag}
               hoverTarget={hoverTarget}
               onToggleLock={toggleLock}
+              onInfo={setDetailCode}
             />
           </div>
         </div>

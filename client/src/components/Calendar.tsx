@@ -66,12 +66,14 @@ function EventBlock({
   top,
   height,
   onToggleLock,
+  onInfo,
   paneId,
 }: {
   block: Block;
   top: number;
   height: number;
   onToggleLock: (code: string) => void;
+  onInfo?: (code: string) => void;
   paneId?: string;
 }) {
   // drag ids must be unique across every calendar on screen, so panes prefix theirs
@@ -125,6 +127,19 @@ function EventBlock({
           {block.locked && <LockIcon />}
           {block.code.replace(/^(AS|EN)\./, '')} §{block.section.section}
         </span>
+        {onInfo && (
+          <button
+            className="btn-info ev-info"
+            aria-label={`Details for ${block.code}`}
+            title="Course details"
+            onClick={(e) => {
+              e.stopPropagation();
+              onInfo(block.code);
+            }}
+          >
+            i
+          </button>
+        )}
       </div>
       <div className="ev-name">{block.courseTitle}</div>
       {firstInstructor && (
@@ -172,6 +187,7 @@ export function Calendar({
   activeDrag,
   hoverTarget,
   onToggleLock,
+  onInfo,
   paneId,
 }: {
   courseMap: Map<string, Course>;
@@ -180,6 +196,7 @@ export function Calendar({
   activeDrag: DragItem | null;
   hoverTarget: string | null;
   onToggleLock: (code: string) => void;
+  onInfo?: (code: string) => void;
   // set for a read-only comparison pane: no dragging, locking, or ghosts
   paneId?: string;
 }) {
@@ -341,6 +358,7 @@ export function Calendar({
                   top={(b.meeting.start - startMin) * PXPM}
                   height={(b.meeting.end - b.meeting.start) * PXPM}
                   onToggleLock={onToggleLock}
+                  onInfo={onInfo}
                   paneId={paneId}
                 />
               )

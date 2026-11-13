@@ -61,6 +61,7 @@ function CourseCard({
   onAdd,
   onRemove,
   onPlace,
+  onInfo,
   startOpen,
 }: {
   course: Course;
@@ -69,6 +70,7 @@ function CourseCard({
   onAdd?: () => void;
   onRemove?: () => void;
   onPlace: (sectionIdx: number) => void;
+  onInfo: () => void;
   startOpen?: boolean;
 }) {
   const [open, setOpen] = useState(!!startOpen);
@@ -88,6 +90,14 @@ function CourseCard({
           <span className="cc-title">{course.title}</span>
         </div>
         <span className="cc-credits">{parseFloat(course.credits) || 0} cr</span>
+        <button
+          className="btn-info"
+          aria-label={`Details for ${course.code}`}
+          title="Description, prerequisites, all sections"
+          onClick={(e) => { e.stopPropagation(); onInfo(); }}
+        >
+          i
+        </button>
         {onAdd && (
           <button className="btn-add" onClick={(e) => { e.stopPropagation(); onAdd(); }}>
             + Add
@@ -125,6 +135,7 @@ export function Sidebar({
   onAdd,
   onRemove,
   onPlace,
+  onInfo,
 }: {
   courses: Course[];
   courseMap: Map<string, Course>;
@@ -133,6 +144,7 @@ export function Sidebar({
   onAdd: (code: string) => void;
   onRemove: (code: string) => void;
   onPlace: (code: string, sectionIdx: number) => void;
+  onInfo: (code: string) => void;
 }) {
   const [tab, setTab] = useState<'search' | 'mine'>('search');
   const [query, setQuery] = useState('');
@@ -224,6 +236,7 @@ export function Sidebar({
                   colorIdx={entry ? colorOf(c.code) : null}
                   onAdd={entry ? undefined : () => onAdd(c.code)}
                   onPlace={(i) => onPlace(c.code, i)}
+                  onInfo={() => onInfo(c.code)}
                 />
               );
             })}
@@ -252,6 +265,7 @@ export function Sidebar({
                   colorIdx={colorOf(s.code)}
                   onRemove={() => onRemove(s.code)}
                   onPlace={(i) => onPlace(s.code, i)}
+                  onInfo={() => onInfo(s.code)}
                   startOpen
                 />
               );

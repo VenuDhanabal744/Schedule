@@ -1570,3 +1570,36 @@ input[type='text'],
 [hidden] {
   display: none !important;
 }
+
+/* ---------- course info button ---------- */
+.btn-info {
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  background: none;
+  color: var(--muted);
+  font: italic 700 11px/1 Georgia, serif;
+  padding: 0;
+  cursor: pointer;
+}
+
+.btn-info:hover {
+  color: var(--accent);
+}
+
+.ev-info {
+  margin-left: auto;
+  width: 15px;
+  min-width: 15px;
+  height: 15px;
+  font-size: 9.5px;
+  color: inherit;
+  opacity: 0.7;
+}
+
+.ev-info:hover {
+  color: inherit;
+  opacity: 1;
+}
