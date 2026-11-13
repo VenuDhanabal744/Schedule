@@ -1603,3 +1603,52 @@ input[type='text'],
   color: inherit;
   opacity: 1;
 }
+
+/* ---------- calendar export dialog ---------- */
+.ics-modal {
+  width: 440px;
+}
+
+.ics-modal p {
+  margin: 0;
+}
+
+.ics-dates {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ics-dates label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.ics-dates input {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.ics-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.ics-actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.modal .ics-cancel {
+  background: #fff;
+  color: var(--text);
+  border: 1px solid var(--border);
+}

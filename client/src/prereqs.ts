@@ -144,7 +144,7 @@ function list(toks: Tok[]): Req | null {
   return group(semiOr ? 'or' : 'and', trees);
 }
 
-const CONCURRENT = /concurrent|same time|simultaneous|during enrollment|pre-?\s*or\s*co-?requisite/i;
+const CONCURRENT = /concurrent|same time|simultaneous|during enrollment/i;
 
 // Bulletin text -> requirement trees. Only what can be read reliably is kept:
 // the caller shows the raw text either way.
@@ -154,12 +154,14 @@ export function parsePrereqText(text: string): ParsedReq[] {
     .replace(/\b(?:[A-DFPS][+-]?|\d)\s+or\s+(?:better|higher|above)\b/gi, '')
     // an escape hatch everyone has; it shouldn't cancel the requirement
     .replace(/[;,]?\s*(?:or\s+)?(?:with\s+)?permission of the \w+[^;.]*/gi, '')
-    .replace(/\bor equivalent\b/gi, '');
+    .replace(/\bor equivalent\b/gi, '')
+    // "Pre- or corequisite, X": a prerequisite that may be taken in the same term
+    .replace(/pre-?\s*or\s*co-?requisites?/gi, 'Prerequisite (concurrent)');
   const out: ParsedReq[] = [];
   // UNC writes "Prerequisites, A and B; Corequisite, C." in one string
-  for (const seg of cleaned.split(/(?=\b(?:pre-?\s*or\s*co-?requisites?|co-?requisites?|pre-?requisites?)\b)/i)) {
+  for (const seg of cleaned.split(/(?=\b(?:co-?requisites?|pre-?requisites?)\b)/i)) {
     if (/^co-?requisite/i.test(seg)) continue; // corequisites are shown, not checked
-    const tree = list(tokenize(seg.replace(/^pre-?\s*or\s*co-?requisites?|^pre-?requisites?/i, '')));
+    const tree = list(tokenize(seg.replace(/^pre-?requisites?/i, '')));
     if (tree) out.push({ tree, concurrent: CONCURRENT.test(seg) });
   }
   return out;

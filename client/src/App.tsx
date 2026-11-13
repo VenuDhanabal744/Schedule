@@ -19,6 +19,7 @@ import { Sidebar } from './components/Sidebar';
 import { GeneratorBar } from './components/GeneratorBar';
 import { Planner } from './components/Planner';
 import { CourseDetail } from './components/CourseDetail';
+import { IcsExport } from './components/IcsExport';
 import { catalogTerm, loadPlan } from './plan';
 
 const DEFAULT_CONSTRAINTS: Constraints = {
@@ -86,6 +87,7 @@ export default function App() {
   );
   useEffect(() => localStorage.setItem('view', view), [view]);
   const [detailCode, setDetailCode] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
   const [school, setSchool] = useState<string>(() => localStorage.getItem('school') ?? 'jhu');
   const [termsInfo, setTermsInfo] = useState<TermsInfo | null>(null);
   const [term, setTerm] = useState<string>('');
@@ -541,6 +543,13 @@ export default function App() {
               <button onClick={() => setComparing(true)} disabled={!pinned.length}>
                 Compare pinned ({pinned.length})
               </button>
+              <button
+                onClick={() => setExporting(true)}
+                disabled={!selected.some((s) => s.sectionIdx != null)}
+                title="Download this week as recurring calendar events"
+              >
+                Export to calendar (.ics)
+              </button>
               {plannedMissing.length > 0 && (
                 <span className="plan-missing" title="Courses your 4-year plan has in this term that aren't in My Courses yet">
                   In your plan, not added:
@@ -575,6 +584,19 @@ export default function App() {
               )}
             </div>
           </div>
+        )}
+
+        {exporting && (
+          <IcsExport
+            school={school}
+            term={term}
+            entries={selected.flatMap((s) => {
+              const course = courseMap.get(s.code);
+              const section = s.sectionIdx != null ? course?.sections[s.sectionIdx] : undefined;
+              return course && section ? [{ course, section }] : [];
+            })}
+            onClose={() => setExporting(false)}
+          />
         )}
 
         {detailCode && (
