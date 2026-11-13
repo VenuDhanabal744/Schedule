@@ -1,0 +1,142 @@
+{
+  "id": "jhu-bme-bs",
+  "school": "jhu",
+  "name": "JHU Biomedical Engineering B.S.",
+  "source": "https://e-catalogue.jhu.edu/engineering/full-time-residential-programs/degree-programs/biomedical-engineering/biomedical-engineering-bachelor-science/",
+  "note": "Unofficial — verify with your advisor. Transcribed Nov 2026 from the e-catalogue page for students entering Fall 2026. Not modelled: grade minimums, ePortfolio assignments (FA1.1eP, FA1.2eP, FA5eP, FA6eP — carried by the Core Electives and Design Sequence), and Career Exploration in BME (0 credits). Courses the catalogue double-counts toward FA2/FA5 (Calculus, Probability & Statistics, Gateway Computing, one science + lab, EN.580.111) are listed once, under Mathematics / Basic Sciences / BME Core.",
+  "totalCredits": 129,
+  "groups": [
+    {
+      "id": "cornerstone",
+      "name": "Design Cornerstone",
+      "courses": ["EN.501.124"]
+    },
+    {
+      "id": "fa1",
+      "name": "FA1 Writing and Communication",
+      "courses": [
+        { "label": "Foundational writing course", "oneOf": ["AS.004.101", "EN.661.110"] },
+        "EN.661.250"
+      ]
+    },
+    {
+      "id": "math",
+      "name": "Mathematics (min. 20 credits)",
+      "note": "A waiver for Calculus I/II must be replaced with AS.110 or EN.553 courses at the 200 level or higher.",
+      "courses": [
+        "AS.110.108",
+        "AS.110.109",
+        { "label": "Calculus III", "oneOf": ["AS.110.202", "AS.110.211"] },
+        {
+          "label": "Linear Algebra and Differential Equations",
+          "oneOf": [
+            "EN.553.291",
+            ["AS.110.201", "AS.110.302"],
+            ["AS.110.212", "AS.110.302"],
+            ["EN.553.295", "AS.110.302"]
+          ]
+        },
+        {
+          "label": "Probability and Statistics",
+          "oneOf": [
+            "EN.553.311",
+            "EN.553.433",
+            ["EN.553.420", "EN.553.430"],
+            ["EN.553.421", "EN.553.431"],
+            ["EN.553.420", "EN.553.413"],
+            ["EN.553.421", "EN.553.413"]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "basic-sciences",
+      "name": "Basic Sciences (min. 18 credits)",
+      "note": "With exam credit for Chemistry I and its lab, take AS.030.103 instead of AS.030.102 + AS.030.106.",
+      "courses": [
+        "AS.030.101",
+        "AS.030.105",
+        "AS.030.102",
+        "AS.030.106",
+        { "label": "General Physics I", "oneOf": ["AS.171.101", "AS.171.107"] },
+        "AS.173.111",
+        { "label": "General Physics II", "oneOf": ["AS.171.102", "AS.171.108"] },
+        "AS.173.112"
+      ]
+    },
+    {
+      "id": "core",
+      "name": "BME Core Courses (23 credits)",
+      "courses": [
+        { "label": "Gateway Computing (Python preferred)", "oneOf": ["EN.500.113", "EN.500.112"] },
+        "EN.580.111",
+        "EN.580.151",
+        "EN.580.231",
+        "EN.580.233",
+        "EN.580.240",
+        "EN.580.241",
+        "EN.580.242",
+        "EN.580.243",
+        "EN.580.246",
+        "EN.580.248"
+      ]
+    },
+    {
+      "id": "core-electives",
+      "name": "BME Core Electives (4 courses)",
+      "count": 4,
+      "match": {
+        "codes": ["EN.580.324", "EN.580.351", "EN.580.352", "EN.580.354", "EN.580.375", "EN.580.385", "EN.580.394"]
+      }
+    },
+    {
+      "id": "design",
+      "name": "Design (8 credits)",
+      "note": "Each two-semester sequence must be taken in its entirety.",
+      "courses": [
+        {
+          "label": "One two-semester design sequence",
+          "oneOf": [
+            ["EN.580.311", "EN.580.312"],
+            ["EN.580.411", "EN.580.412"],
+            ["EN.580.437", "EN.580.438"],
+            ["EN.580.471", "EN.580.472"],
+            ["EN.580.480", "EN.580.481"],
+            ["EN.530.403", "EN.530.404"],
+            ["EN.660.345", "EN.660.346"]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "focus-area",
+      "name": "Focus Area (18 credits)",
+      "todo": true,
+      "note": "TODO: this counts courses tagged for ANY focus area. Trim \"posTags\" to your own (BME-BDS Biomedical Data Science, BME-CM Computational Medicine, BME-GSB Genomics and Systems Biology, BME-IMD Imaging and Medical Devices, BME-IMMU Immunoengineering, BME-NE Neuroengineering, BME-TCTE Translational Cell and Tissue Engineering). Not modelled: each area's mastery-course minimum, max. 4 credits of lower-level engineering, max. 3 credits of EN.580.497/EN.580.561.",
+      "credits": 18,
+      "match": {
+        "posTags": ["BME-BDS", "BME-CM", "BME-GSB", "BME-IMD", "BME-IMMU", "BME-NE", "BME-TCTE"]
+      }
+    },
+    {
+      "id": "fa3-fa4",
+      "name": "FA3 Creative Expression + FA4 Engagement with Society (12 credits)",
+      "credits": 12,
+      "match": { "areas": ["FA3", "FA4"] }
+    },
+    {
+      "id": "fa3-min",
+      "name": "…of which FA3 (min. 3 credits)",
+      "credits": 3,
+      "shared": true,
+      "match": { "areas": ["FA3"] }
+    },
+    {
+      "id": "fa4-min",
+      "name": "…of which FA4 (min. 3 credits)",
+      "credits": 3,
+      "shared": true,
+      "match": { "areas": ["FA4"] }
+    }
+  ]
+}
