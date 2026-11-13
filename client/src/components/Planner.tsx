@@ -213,7 +213,7 @@ function PlanCard({
             </label>
           )}
           {templates.map((t) => (
-            <label key={t.id}>
+            <label key={t.id} className="stack">
               Count toward ({t.name})
               <select value={assign[t.id]?.[item.id] ?? ''} onChange={(e) => onAssign(t.id, e.target.value)}>
                 <option value="">Automatic</option>

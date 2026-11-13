@@ -1534,7 +1534,7 @@ input[type='text'],
   }
 
   .plan-grid {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 5px;
   }
 
@@ -1651,4 +1651,28 @@ input[type='text'],
   background: #fff;
   color: var(--text);
   border: 1px solid var(--border);
+}
+
+@media (max-width: 860px) {
+  .compare-bar {
+    flex-wrap: wrap;
+  }
+
+  .compare-bar button {
+    min-height: 34px;
+  }
+
+  .plan-missing {
+    width: 100%;
+  }
+
+  .plan-toolbar .gen-controls > label {
+    flex-wrap: wrap;
+  }
+}
+
+.plan-edit label.stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
 }
