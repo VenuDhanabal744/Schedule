@@ -17,6 +17,10 @@ import { Calendar } from './components/Calendar';
 import type { DragItem } from './components/Calendar';
 import { Sidebar } from './components/Sidebar';
 import { GeneratorBar } from './components/GeneratorBar';
+import { Planner } from './components/Planner';
+import { CourseDetail } from './components/CourseDetail';
+import { IcsExport } from './components/IcsExport';
+import { catalogTerm, loadPlan } from './plan';
 
 const DEFAULT_CONSTRAINTS: Constraints = {
   earliest: null,
@@ -63,7 +67,27 @@ const isCurrentOrFuture = (name: string) => {
   return !end || end > new Date();
 };
 
+// A term's saved selection. Selections saved before multi-school support used
+// an unscoped key, still honored for JHU.
+function readSelected(school: string, term: string): Selected[] {
+  try {
+    return JSON.parse(
+      localStorage.getItem(`selected:${school}:${term}`) ??
+        (school === 'jhu' ? localStorage.getItem(`selected:${term}`) : null) ??
+        '[]'
+    );
+  } catch {
+    return [];
+  }
+}
+
 export default function App() {
+  const [view, setView] = useState<'schedule' | 'plan'>(() =>
+    localStorage.getItem('view') === 'plan' ? 'plan' : 'schedule'
+  );
+  useEffect(() => localStorage.setItem('view', view), [view]);
+  const [detailCode, setDetailCode] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
   const [school, setSchool] = useState<string>(() => localStorage.getItem('school') ?? 'jhu');
   const [termsInfo, setTermsInfo] = useState<TermsInfo | null>(null);
   const [term, setTerm] = useState<string>('');
@@ -80,6 +104,8 @@ export default function App() {
   const [pinned, setPinned] = useState<Selected[][]>([]);
   const [comparing, setComparing] = useState(false);
   const importing = useRef(false);
+  // which school+term the loaded `courses` (and restored selection) belong to
+  const loadedFor = useRef('');
 
   // load terms for the active school; prefer a real imported term over the demo
   useEffect(() => {
@@ -105,29 +131,21 @@ export default function App() {
   useEffect(() => {
     if (!term) return;
     localStorage.setItem(`term:${school}`, term);
+    loadedFor.current = '';
     setCourses([]);
     setGen(null);
     setLoadError(null);
     setComparing(false);
     fetchCourses(school, term)
       .then((cs) => {
+        loadedFor.current = `${school}:${term}`;
         setCourses(cs);
         try {
           setPinned(JSON.parse(localStorage.getItem(`pinned:${school}:${term}`) ?? '[]'));
         } catch {
           setPinned([]);
         }
-        try {
-          const raw =
-            localStorage.getItem(`selected:${school}:${term}`) ??
-            // selections saved before multi-school support used an unscoped key
-            (school === 'jhu' ? localStorage.getItem(`selected:${term}`) : null) ??
-            '[]';
-          const saved = JSON.parse(raw);
-          setSelected(saved.filter((s: Selected) => cs.some((c) => c.code === s.code)));
-        } catch {
-          setSelected([]);
-        }
+        setSelected(readSelected(school, term).filter((s) => cs.some((c) => c.code === s.code)));
       })
       .catch((err) => setLoadError(err.message));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -135,8 +153,9 @@ export default function App() {
 
   useEffect(() => {
     // don't save until this term's courses (and restored selection) have loaded,
-    // otherwise the initial empty selection wipes the stored one
-    if (term && courses.length) {
+    // otherwise the initial empty selection — or, right after switching terms,
+    // the previous term's selection — overwrites the stored one
+    if (term && courses.length && loadedFor.current === `${school}:${term}`) {
       localStorage.setItem(`selected:${school}:${term}`, JSON.stringify(selected));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -241,6 +260,32 @@ export default function App() {
   };
 
   const [hoverTarget, setHoverTarget] = useState<string | null>(null);
+
+  // Planner hand-off: put a planned semester's courses into My Courses for
+  // that term (keeping whatever is already there) and show the scheduler.
+  const buildFromPlan = (catTerm: string, codes: string[]) => {
+    setView('schedule');
+    if (catTerm === term) {
+      codes.forEach(addCourse);
+      return;
+    }
+    const saved = readSelected(school, catTerm);
+    const added = codes
+      .filter((code) => !saved.some((s) => s.code === code))
+      .map((code) => ({ code, sectionIdx: null }));
+    localStorage.setItem(`selected:${school}:${catTerm}`, JSON.stringify([...saved, ...added]));
+    setTerm(catTerm);
+  };
+
+  // courses the 4-year plan puts in this term that aren't in My Courses yet
+  const plannedMissing = useMemo(() => {
+    if (view !== 'schedule' || !term || !termsInfo) return [];
+    const plan = loadPlan(school);
+    return Object.entries(plan.terms)
+      .filter(([name]) => catalogTerm(name, termsInfo.imported) === term)
+      .flatMap(([, items]) => items.flatMap((it) => (it.code ? [it.code] : [])))
+      .filter((code) => courseMap.has(code) && !selected.some((s) => s.code === code));
+  }, [view, school, term, termsInfo, courseMap, selected]);
 
   // Mouse: require a little movement before a drag activates so plain clicks
   // (e.g. clicking a calendar box to lock it) aren't swallowed by the sensor.
@@ -370,6 +415,14 @@ export default function App() {
       <div className="app">
         <header className="topbar">
           <h1>Schedule</h1>
+          <div className="view-toggle" role="tablist" aria-label="View">
+            <button role="tab" aria-selected={view === 'schedule'} className={view === 'schedule' ? 'active' : ''} onClick={() => setView('schedule')}>
+              Weekly schedule
+            </button>
+            <button role="tab" aria-selected={view === 'plan'} className={view === 'plan' ? 'active' : ''} onClick={() => setView('plan')}>
+              4-Year Planner
+            </button>
+          </div>
           <div className="term-picker">
             <label>School</label>
             <select value={school} onChange={(e) => setSchool(e.target.value)}>
@@ -380,7 +433,7 @@ export default function App() {
               ))}
             </select>
           </div>
-          <div className="term-picker">
+          <div className="term-picker" hidden={view === 'plan'}>
             <label>Term</label>
             <select value={term} onChange={(e) => onTermChoice(e.target.value)}>
               {term === '' && <option value="">Select a term…</option>}
@@ -399,7 +452,9 @@ export default function App() {
           <div className="topbar-credit">Created by Venu Dhanabal</div>
         </header>
 
-        {comparing ? (
+        {view === 'plan' ? (
+          <Planner key={school} school={school} onBuildSchedule={buildFromPlan} onInfo={setDetailCode} />
+        ) : comparing ? (
           <div className="compare-view">
             <div className="compare-bar">
               <button onClick={() => setComparing(false)}>‹ Back to editor</button>
@@ -442,6 +497,7 @@ export default function App() {
                       activeDrag={null}
                       hoverTarget={null}
                       onToggleLock={() => {}}
+                      onInfo={setDetailCode}
                       paneId={`pin${i}-`}
                     />
                   </div>
@@ -459,6 +515,7 @@ export default function App() {
             onAdd={addCourse}
             onRemove={removeCourse}
             onPlace={placeSection}
+            onInfo={setDetailCode}
           />
           <div className="content">
             <GeneratorBar
@@ -486,6 +543,23 @@ export default function App() {
               <button onClick={() => setComparing(true)} disabled={!pinned.length}>
                 Compare pinned ({pinned.length})
               </button>
+              <button
+                onClick={() => setExporting(true)}
+                disabled={!selected.some((s) => s.sectionIdx != null)}
+                title="Download this week as recurring calendar events"
+              >
+                Export to calendar (.ics)
+              </button>
+              {plannedMissing.length > 0 && (
+                <span className="plan-missing" title="Courses your 4-year plan has in this term that aren't in My Courses yet">
+                  In your plan, not added:
+                  {plannedMissing.map((code) => (
+                    <button key={code} onClick={() => addCourse(code)} title={`Add ${code} to My Courses`}>
+                      + {code}
+                    </button>
+                  ))}
+                </span>
+              )}
             </div>
             <Calendar
               courseMap={courseMap}
@@ -494,6 +568,7 @@ export default function App() {
               activeDrag={activeDrag}
               hoverTarget={hoverTarget}
               onToggleLock={toggleLock}
+              onInfo={setDetailCode}
             />
           </div>
         </div>
@@ -509,6 +584,23 @@ export default function App() {
               )}
             </div>
           </div>
+        )}
+
+        {exporting && (
+          <IcsExport
+            school={school}
+            term={term}
+            entries={selected.flatMap((s) => {
+              const course = courseMap.get(s.code);
+              const section = s.sectionIdx != null ? course?.sections[s.sectionIdx] : undefined;
+              return course && section ? [{ course, section }] : [];
+            })}
+            onClose={() => setExporting(false)}
+          />
+        )}
+
+        {detailCode && (
+          <CourseDetail school={school} code={detailCode} onClose={() => setDetailCode(null)} />
         )}
 
         <DragOverlay dropAnimation={null}>

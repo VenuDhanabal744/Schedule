@@ -7,6 +7,7 @@ import { fetchTempleTerms, fetchTempleCatalog, normalizeTempleCatalog } from './
 import { fetchUncTerms, fetchUncCatalog, normalizeUncCatalog } from './unc.js';
 import { lookupInstructor } from './rmp.js';
 import { SAMPLE_TERM, SAMPLE_COURSES } from './sample.js';
+import { readCatalogs } from './details.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, 'data');
@@ -173,6 +174,88 @@ app.get('/api/courses', (req, res) => {
     return res.status(404).json({ error: `Term "${term}" has not been imported yet` });
   }
   res.sendFile(file);
+});
+
+// ---- planner data: every imported term of a school merged into one index ----
+
+const readJson = (file) => (fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null);
+
+// Parsed catalogs + details per school, rebuilt when a data file changes
+// (a local import or `npm run details`).
+const plannerCache = new Map();
+function plannerData(school) {
+  const files = fs.existsSync(DATA_DIR)
+    ? fs.readdirSync(DATA_DIR).filter((f) => f.endsWith(`-${school}.json`) || f.startsWith(`courses-${school}-`))
+    : [];
+  const stamp = files.map((f) => `${f}:${fs.statSync(path.join(DATA_DIR, f)).mtimeMs}`).join('|');
+  const cached = plannerCache.get(school);
+  if (cached?.stamp === stamp) return cached;
+
+  const catalogs = readCatalogs(school); // oldest term first
+  const details = readJson(path.join(DATA_DIR, `coursedetails-${school}.json`))?.courses ?? {};
+  const byCode = new Map();
+  for (const cat of catalogs) {
+    for (const c of cat.courses) {
+      const { sections: _sections, school: _school, ...info } = c;
+      // later terms overwrite title/credits, so the newest listing wins
+      byCode.set(c.code, { ...info, terms: [...(byCode.get(c.code)?.terms ?? []), cat.term] });
+    }
+  }
+  for (const [code, entry] of byCode) {
+    const d = details[code];
+    if (d?.prereqs) entry.prereqs = d.prereqs;
+    if (d?.posTags) entry.posTags = d.posTags;
+    if (d?.repeatable) entry.repeatable = true;
+  }
+  const data = { stamp, catalogs, details, index: [...byCode.values()] };
+  plannerCache.set(school, data);
+  return data;
+}
+
+// Requirement templates are plain JSON files; each names its school.
+function requirementTemplates(school) {
+  const dir = path.join(DATA_DIR, 'requirements');
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => readJson(path.join(dir, f)))
+    .filter((t) => t?.school === school);
+}
+
+app.get('/api/planner', (req, res) => {
+  const school = String(req.query.school ?? 'jhu');
+  if (!SCHOOLS[school]) return res.status(400).json({ error: `Unknown school "${school}"` });
+  const data = plannerData(school);
+  res.json({
+    school,
+    terms: data.catalogs.map((c) => c.term),
+    courses: data.index,
+    templates: requirementTemplates(school),
+  });
+});
+
+// Everything known about one course: description/prerequisites and its
+// sections in every imported term.
+app.get('/api/course', (req, res) => {
+  const school = String(req.query.school ?? 'jhu');
+  const code = String(req.query.code ?? '');
+  if (!SCHOOLS[school]) return res.status(400).json({ error: `Unknown school "${school}"` });
+  const data = plannerData(school);
+  const offerings = data.catalogs
+    .map((cat) => ({ term: cat.term, course: cat.courses.find((c) => c.code === code) }))
+    .filter((o) => o.course)
+    .reverse(); // newest first
+  if (school === 'jhu') {
+    const sample = SAMPLE_COURSES.find((c) => c.code === code);
+    if (sample && !offerings.length) offerings.push({ term: SAMPLE_TERM, course: sample });
+  }
+  res.json({
+    code,
+    detail: data.details[code] ?? null,
+    offerings,
+    importedTerms: data.catalogs.map((c) => c.term),
+  });
 });
 
 // /api/ratings?school=jhu&instructors=Last, First|Last, First

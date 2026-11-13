@@ -1,0 +1,75 @@
+{
+  "id": "jhu-premed",
+  "school": "jhu",
+  "name": "JHU Pre-Med / Pre-Health coursework checklist",
+  "source": "https://studentaffairs.jhu.edu/preprofadvising/pre-medhealth/prerequisites/",
+  "note": "Unofficial — verify with Pre-Professional Advising and your advisor. The advising page (read Nov 2026) lists recommended subject areas, not course codes. Codes for chemistry, organic chemistry, physics and biochemistry are the ones in the BME e-catalogue's \"Sample Program for Pre-Meds\"; groups marked TODO are placeholders to confirm. Requirements vary by medical school, and AP/IB credit often does not replace coursework.",
+  "groups": [
+    {
+      "id": "gen-chem",
+      "name": "General chemistry: 2 courses with labs",
+      "courses": ["AS.030.101", "AS.030.105", "AS.030.102", "AS.030.106"]
+    },
+    {
+      "id": "orgo",
+      "name": "Organic chemistry: 2 courses with lab",
+      "note": "JHU offers one 3-credit organic chemistry lab.",
+      "courses": ["AS.030.205", "AS.030.206", "AS.030.225"]
+    },
+    {
+      "id": "biology",
+      "name": "Biology: 2 courses with labs",
+      "todo": true,
+      "note": "TODO: the advising page names no courses, and the BME pre-med sample program contains no AS.020 biology courses — ask Pre-Professional Advising which BME courses and labs count. The matcher (any AS.020 course) is a placeholder; edit \"match\" or assign courses to this group by hand.",
+      "count": 2,
+      "match": { "patterns": ["AS.020.*"] }
+    },
+    {
+      "id": "biochem",
+      "name": "Biochemistry: 1 course",
+      "note": "EN.580.231 is from the BME pre-med sample program; the other options are courses titled Biochemistry in SIS — confirm they count.",
+      "courses": [{ "label": "Biochemistry", "oneOf": ["EN.580.231", "AS.020.305", "AS.250.315"] }]
+    },
+    {
+      "id": "physics",
+      "name": "General physics: 2 courses with labs",
+      "note": "Calculus I and II are recommended co-requisites.",
+      "courses": [
+        { "label": "General Physics I", "oneOf": ["AS.171.101", "AS.171.107"] },
+        "AS.173.111",
+        { "label": "General Physics II", "oneOf": ["AS.171.102", "AS.171.108"] },
+        "AS.173.112"
+      ]
+    },
+    {
+      "id": "math",
+      "name": "Mathematics: 1 course",
+      "todo": true,
+      "note": "TODO: placeholder matcher (any AS.110 Mathematics course) — confirm.",
+      "count": 1,
+      "match": { "patterns": ["AS.110.*"] }
+    },
+    {
+      "id": "statistics",
+      "name": "Statistics: 1 course",
+      "todo": true,
+      "note": "TODO: placeholder matcher — the probability/statistics options from the BME requirements. Add other statistics courses you intend to use.",
+      "count": 1,
+      "match": { "codes": ["EN.553.311", "EN.553.433", "EN.553.420", "EN.553.421", "EN.553.430", "EN.553.431", "EN.553.413"] }
+    },
+    {
+      "id": "writing",
+      "name": "English / writing: 2 writing-intensive courses",
+      "note": "One should preferably be in English, Writing Seminars or the University Writing Program. Each medical school decides what it accepts.",
+      "count": 2,
+      "match": { "writingIntensive": true }
+    },
+    {
+      "id": "social",
+      "name": "Social and behavioral sciences: 2 courses",
+      "note": "Introduction to Psychology (AS.200.101) and Introduction to Sociology (AS.230.101) are recommended for MCAT preparation but not required. Matches any course with the S area tag.",
+      "count": 2,
+      "match": { "areas": ["S"] }
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import type { Course, Rating } from './types';
+import type { Course, CourseInfo, PlannerData, Rating } from './types';
 
 export type TermOption = { name: string; code: string };
 
@@ -37,6 +37,20 @@ export async function fetchCourses(school: string, term: string): Promise<Course
     }
   }
   return data.courses;
+}
+
+export async function fetchPlannerData(school: string): Promise<PlannerData> {
+  const res = await fetch(`/api/planner?school=${encodeURIComponent(school)}`);
+  if (!res.ok) throw new Error('Failed to load planner data');
+  return res.json();
+}
+
+export async function fetchCourseInfo(school: string, code: string): Promise<CourseInfo> {
+  const res = await fetch(
+    `/api/course?school=${encodeURIComponent(school)}&code=${encodeURIComponent(code)}`
+  );
+  if (!res.ok) throw new Error('Failed to load course details');
+  return res.json();
 }
 
 export async function importTerm(
