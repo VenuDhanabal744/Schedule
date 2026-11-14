@@ -141,13 +141,14 @@ Pre-Professional Advising pages named in their `source`; they are unofficial, an
   Requirements tab to track it with a progress bar per group. "Build this semester's schedule" loads a planned term into the scheduler, which
   lists planned courses you haven't added yet. Saved in the browser per school; export or
   import as JSON, and Print / PDF gives a one-page view.
-- **Auto-plan** (JHU Biomedical Engineering) — pick a graduation term and a credit cap, and
-  the planner lays out the e-catalogue's sample program in its order, respecting
-  prerequisites and the season each course runs in. Keeps the courses you entered and
-  leaves semesters with completed or in-progress courses alone. A pre-med box switches to
-  the catalogue's pre-med sample and turns on the pre-med checklist; focus areas are ranked
-  by their share of Natural Sciences courses. The sample lives in
-  `client/src/samplePlans.ts`.
+- **Auto-plan** (JHU: the 68 majors whose e-catalogue page has a sample program) — pick a
+  major, a graduation term and a credit cap, and the planner lays out the sample program in
+  its order, respecting prerequisites and the season each course runs in. Keeps the courses
+  you entered and leaves semesters with completed or in-progress courses alone. The pre-med
+  box turns on the pre-med checklist (for BME it also switches to the pre-med sample; BME
+  focus areas are ranked by their share of Natural Sciences courses). `npm run requirements
+  -- jhu` reads each page's first sample grid into the generated template; the hand-typed
+  BME sample in `client/src/samplePlans.ts` takes precedence.
 - **Order check and Mark done** — the planner checks every course's prerequisites and
   corequisites (a lecture and its lab must share a term) and says so above the grid. A
   course the registrar bars after one you hold counts as taken (AS.030.103 for AS.030.102).

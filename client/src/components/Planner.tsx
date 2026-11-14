@@ -30,7 +30,7 @@ import {
 import type { Plan, PlanItem, PlanStatus, Warning } from '../plan';
 import { matchRequirements } from '../requirements';
 import type { GroupProgress } from '../requirements';
-import { samplePlans } from '../samplePlans';
+import { samplePlans, sampleFor } from '../samplePlans';
 import { AutoPlan } from './AutoPlan';
 import { autoPlan } from '../autoplan';
 
@@ -372,7 +372,6 @@ export function Planner({
   const [loaded, setLoaded] = useState<Record<string, ReqTemplate | 'loading' | 'failed'>>({});
   const [reqQuery, setReqQuery] = useState('');
   const [autoOpen, setAutoOpen] = useState(false);
-  const sample = samplePlans[school];
 
   useEffect(() => {
     fetchPlannerData(school).then(setData, (e) => setError(e.message));
@@ -395,6 +394,7 @@ export function Planner({
   );
 
   const index = useMemo(() => new Map((data?.courses ?? []).map((c) => [c.code, c])), [data]);
+  const programs = useMemo(() => data?.templates.filter((t) => t.sample || samplePlans[t.id]) ?? [], [data]);
   const imported = useMemo(() => data?.terms ?? [], [data]);
   const seq = useMemo(() => termSequence(plan), [plan]);
   const warnings = useMemo(() => planWarnings(plan, index, imported), [plan, index, imported]);
@@ -434,7 +434,9 @@ export function Planner({
         p.terms[term].map((it): PlanItem => ({ ...it, auto: undefined, status: done ? 'completed' : 'planned' }))
       );
       // a finished semester is fixed: lay the rest of the auto-plan out around it
-      const template = sample && loaded[sample.templateId];
+      const id = p.autoPlan && (p.autoPlan.templateId ?? 'jhu-bme-bs'); // made before majors were selectable: BME
+      const template = id ? loaded[id] : undefined;
+      const sample = typeof template === 'object' ? sampleFor(template) : id ? samplePlans[id] : undefined;
       return done && sample && p.autoPlan
         ? autoPlan({
             plan: next,
@@ -797,7 +799,7 @@ export function Planner({
                 cr
               </label>
               <div className="gen-buttons">
-                {sample && data && (
+                {programs.length > 0 && (
                   <button className="plan-auto" onClick={() => setAutoOpen(true)}>
                     Auto-plan
                   </button>
@@ -893,11 +895,11 @@ export function Planner({
         </div>
       </div>
       <DragOverlay dropAnimation={null}>{drag && <div className="drag-overlay c0">{drag.label}</div>}</DragOverlay>
-      {autoOpen && sample && (
+      {autoOpen && programs.length > 0 && (
         <AutoPlan
           school={school}
           plan={plan}
-          sample={sample}
+          programs={programs}
           index={index}
           imported={imported}
           onApply={setPlan}

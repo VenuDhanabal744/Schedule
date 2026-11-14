@@ -287,6 +287,47 @@ function requirementsHtml(page) {
   return page.slice(start, next < 0 ? undefined : start + 10 + next);
 }
 
+// What an uncoded sample-grid cell ("Free Elective", "Course with EN
+// Foundational Ability tag FA3 …") stands for; the auto-planner's slot kinds.
+export const sampleSlot = (label) =>
+  /\bFA3 or FA4\b/i.test(label)
+    ? 'fa3-fa4'
+    : /\btag FA3\b/i.test(label)
+      ? 'fa3'
+      : /\btag FA4\b/i.test(label)
+        ? 'fa4'
+        : /\bfree\b|unrestricted|undesignated|optional|^elective(?: course)?$/i.test(label)
+          ? 'free'
+          : 'major';
+
+// The page's first sample program grid ("Sample Program of Study") -> one list
+// of entries per semester, Fall first. Two layouts: each year's Fall | Spring
+// side by side (code, credits), or stacked one term at a time (code, title,
+// credits; Peabody). A cell's linked codes are alternatives ("AS.171.101 or 107").
+export function parsePlanGrid(page) {
+  const grid = page.match(/<table[^>]*class="sc_plangrid[^"]*"[^>]*>(.*?)<\/table>/s)?.[1];
+  if (!grid) return null;
+  const sems = [];
+  for (const [, head, body, title, hours] of grid.matchAll(
+    /<td[^>]*headers?="([^"]*)"[^>]*class="codecol"[^>]*>(.*?)<\/td>(.*?)<td[^>]*class="hourscol"[^>]*>(.*?)<\/td>/gs
+  )) {
+    // "year1 year1_Term0_codecol" or " 9bzsUe_plangrid1_1_0": year 1, term 0
+    const [, year, term] = head.match(/year(\d+)_Term(\d+)/) ?? head.match(/_(\d+)_(\d+)\s*$/) ?? [];
+    const label = text(body) || text(title);
+    if (!year || !label) continue;
+    const linked = [...body.matchAll(/title="([^"]+)"[^>]*class="[^"]*\bcode\b/g)].map((m) => text(m[1]));
+    const codes = [...new Set(linked.length ? linked : label.match(/^[A-Z]{2}\.\d{3}\.\d{3}$/) ?? [])];
+    let credits = parseFloat(text(hours)) || 0; // "2-3" -> 2
+    if (!codes.length && !credits) {
+      if (/optional|\bsee\b/i.test(label)) continue; // a note, not a course
+      credits = 3; // an elective with its credits left blank
+    }
+    (sems[+year * 2 + +term] ??= []).push(codes.length ? { credits, codes } : { credits, slot: sampleSlot(label), label });
+  }
+  const out = Array.from(sems, (s) => s ?? []);
+  return out.some((s) => s.length) ? out : null;
+}
+
 export function parseProgramPage(page, url, school) {
   const html = requirementsHtml(page);
   const tables = [];
@@ -314,6 +355,8 @@ export function parseProgramPage(page, url, school) {
   }
   const titles = [...page.matchAll(/<h1[^>]*>(.*?)<\/h1>/gs)].map((m) => text(m[1])).filter(Boolean);
   const name = titles.at(-1) ?? url;
+  // shortcut: JHU grids only; check Temple/UNC grid markup before enabling them
+  const sample = school === 'jhu' ? parsePlanGrid(page) : null;
   return {
     id: `${school}-${url.replace(/\/$/, '').split('/').pop()}`,
     school,
@@ -325,6 +368,7 @@ export function parseProgramPage(page, url, school) {
       'TODO; programs with tracks or concentrations list every option — hide the groups that do not apply.',
     generated: true,
     groups,
+    ...(sample ? { sample } : {}),
   };
 }
 

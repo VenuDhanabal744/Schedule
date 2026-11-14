@@ -1,17 +1,17 @@
-import { useMemo, useState } from 'react';
-import type { IndexCourse } from '../types';
+import { useEffect, useMemo, useState } from 'react';
+import type { IndexCourse, ReqSummary, ReqTemplate } from '../types';
 import { fetchRequirementTemplate } from '../api';
 import { autoPlan, rankFocusAreas, semesters } from '../autoplan';
 import { planWarnings, termCredits } from '../plan';
 import type { Plan } from '../plan';
-import type { SamplePlan } from '../samplePlans';
+import { samplePlans, sampleFor } from '../samplePlans';
 
 // Dialog for "Auto-plan": lays the catalog's sample program out over the
 // semesters up to a graduation term, under a credit cap.
 export function AutoPlan({
   school,
   plan,
-  sample,
+  programs,
   index,
   imported,
   onApply,
@@ -19,7 +19,7 @@ export function AutoPlan({
 }: {
   school: string;
   plan: Plan;
-  sample: SamplePlan;
+  programs: ReqSummary[]; // requirement templates that have a sample program
   index: Map<string, IndexCourse>;
   imported: string[];
   onApply: (plan: Plan) => void;
@@ -30,23 +30,35 @@ export function AutoPlan({
   const [count, setCount] = useState(last?.semesterCount ?? Math.min(12, Math.max(8, plan.numTerms)));
   const [max, setMax] = useState(plan.maxCredits || 18);
   const [premed, setPremed] = useState(last?.premed ?? false);
-  const [focus, setFocus] = useState<string | null>(
-    sample.focusAreas.find((f) => f.name === last?.focusName)?.tag ?? null // null: not chosen by hand
+  const [programId, setProgramId] = useState(
+    // auto-plans made before majors were selectable were all BME
+    (last && (last.templateId ?? 'jhu-bme-bs')) ??
+      plan.templates.find((id) => programs.some((p) => p.id === id)) ??
+      programs[0].id
   );
+  const [focus, setFocus] = useState<string | null>(
+    samplePlans[programId]?.focusAreas.find((f) => f.name === last?.focusName)?.tag ?? null // null: not chosen by hand
+  );
+  const [template, setTemplate] = useState<ReqTemplate | 'loading' | 'failed'>('loading');
+  useEffect(() => {
+    setTemplate('loading');
+    fetchRequirementTemplate(school, programId).then(setTemplate, () => setTemplate('failed'));
+  }, [school, programId]);
+  // without the template a hand-written sample still plans; it just can't tell
+  // which of your own courses already fill an elective slot
+  const sample = typeof template === 'object' ? sampleFor(template) : samplePlans[programId];
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string[] | null>(null);
 
-  const ranked = useMemo(() => rankFocusAreas(sample.focusAreas, index), [sample, index]);
+  const ranked = useMemo(() => rankFocusAreas(sample?.focusAreas ?? [], index), [sample, index]);
   const best = ranked[0]?.science ? ranked[0] : undefined;
   // pre-med picks the top-ranked area unless the student chose one
   const chosen = focus ?? (premed ? best?.tag ?? '' : '');
   const hasAuto = Object.values(plan.terms).some((items) => items.some((it) => it.auto));
 
-  const generate = async () => {
+  const generate = () => {
+    if (!sample) return;
     setBusy(true);
-    // without the template the plan is still built; it just can't tell which
-    // of your own courses already fill an elective slot
-    const template = await fetchRequirementTemplate(school, sample.templateId).catch(() => undefined);
     const { plan: next, unplaced, skipped } = autoPlan({
       plan,
       sample,
@@ -55,7 +67,7 @@ export function AutoPlan({
       maxCredits: max,
       index,
       imported,
-      template,
+      template: typeof template === 'object' ? template : undefined,
       focusName: ranked.find((r) => r.tag === chosen)?.name,
     });
     onApply(next);
@@ -88,12 +100,34 @@ export function AutoPlan({
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal ics-modal auto-modal" role="dialog" aria-label="Auto-plan" onClick={(e) => e.stopPropagation()}>
-        <h2>Auto-plan: {sample.name}</h2>
+        <h2>Auto-plan</h2>
+        <label className="auto-focus">
+          Major
+          <select
+            value={programId}
+            onChange={(e) => {
+              setProgramId(e.target.value);
+              setFocus(null);
+            }}
+          >
+            {[...programs]
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+          </select>
+        </label>
         <p className="cd-parsed">
           Follows the order of the{' '}
-          <a href={sample.source} target="_blank" rel="noreferrer">
-            catalog’s sample program
-          </a>
+          {sample ? (
+            <a href={sample.source} target="_blank" rel="noreferrer">
+              catalog’s sample program
+            </a>
+          ) : (
+            'catalog’s sample program'
+          )}
           . Keeps the courses you added, skips what they already cover, and replaces anything an earlier auto-plan
           placed. Unofficial — check it with your advisor.
         </p>
@@ -131,25 +165,31 @@ export function AutoPlan({
             </div>
             <label className="auto-check">
               <input type="checkbox" checked={premed} onChange={(e) => setPremed(e.target.checked)} />
-              Pre-med: use the catalog’s pre-med sample (adds Organic Chemistry I, II and lab) and turn on the pre-med
-              checklist
+              {sample?.premed
+                ? 'Pre-med: use the catalog’s pre-med sample (adds Organic Chemistry I, II and lab) and turn on the pre-med checklist'
+                : 'Pre-med: turn on the pre-med checklist (this major’s catalog has no pre-med sample)'}
             </label>
-            <label className="auto-focus">
-              Focus area
-              <select value={chosen} onChange={(e) => setFocus(e.target.value)}>
-                <option value="">Undecided</option>
-                {ranked.map((r) => (
-                  <option key={r.tag} value={r.tag}>
-                    {r.name} — {r.science} of {r.total} courses in Natural Sciences
-                    {premed && r === best ? ' (most pre-med overlap)' : ''}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <p className="cd-parsed">
-              Ranked by how many of each area’s courses the registrar tags Natural Sciences (N) — a rough measure of
-              biology and chemistry content, not advising. The choice only labels the six focus-area slots.
-            </p>
+            {template === 'failed' && !sample && <p className="cd-parsed">Couldn’t load this major’s sample program.</p>}
+            {!!sample?.focusAreas.length && (
+              <>
+                <label className="auto-focus">
+                  Focus area
+                  <select value={chosen} onChange={(e) => setFocus(e.target.value)}>
+                    <option value="">Undecided</option>
+                    {ranked.map((r) => (
+                      <option key={r.tag} value={r.tag}>
+                        {r.name} — {r.science} of {r.total} courses in Natural Sciences
+                        {premed && r === best ? ' (most pre-med overlap)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p className="cd-parsed">
+                  Ranked by how many of each area’s courses the registrar tags Natural Sciences (N) — a rough measure of
+                  biology and chemistry content, not advising. The choice only labels the six focus-area slots.
+                </p>
+              </>
+            )}
             <div className="ics-actions">
               {hasAuto && (
                 <button
@@ -169,7 +209,7 @@ export function AutoPlan({
               <button className="ics-cancel" onClick={onClose}>
                 Cancel
               </button>
-              <button onClick={generate} disabled={busy || max < 1}>
+              <button onClick={generate} disabled={busy || max < 1 || !sample}>
                 {busy ? 'Planning…' : 'Create plan'}
               </button>
             </div>

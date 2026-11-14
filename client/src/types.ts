@@ -1,3 +1,5 @@
+import type { SampleEntry } from './samplePlans';
+
 export type Meeting = { days: string[]; start: number; end: number };
 
 export type Section = {
@@ -85,7 +87,7 @@ export type PlannerData = {
   templates: ReqSummary[]; // full templates load on demand
 };
 
-export type ReqSummary = { id: string; name: string; generated?: boolean };
+export type ReqSummary = { id: string; name: string; generated?: boolean; sample?: boolean };
 
 export type CourseInfo = {
   code: string;
@@ -132,4 +134,5 @@ export type ReqTemplate = {
   totalCredits?: number;
   generated?: boolean; // built by server/requirements.js from the catalog page
   groups: ReqGroup[];
+  sample?: SampleEntry[][]; // the catalog's sample program, one list per semester
 };

@@ -253,7 +253,12 @@ app.get('/api/planner', (req, res) => {
     terms: data.catalogs.map((c) => c.term),
     courses: data.index,
     // names only: the full templates are fetched one at a time when chosen
-    templates: requirementTemplates(school).map(({ id, name, generated }) => ({ id, name, ...(generated ? { generated } : {}) })),
+    templates: requirementTemplates(school).map(({ id, name, generated, sample }) => ({
+      id,
+      name,
+      ...(generated ? { generated } : {}),
+      ...(sample ? { sample: true } : {}),
+    })),
   });
 });
 

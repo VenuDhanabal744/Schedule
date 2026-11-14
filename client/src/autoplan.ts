@@ -66,7 +66,7 @@ export function autoPlan(o: AutoPlanOptions): {
   skipped: string[];
 } {
   const { plan, sample, index, maxCredits } = o;
-  const grid = o.premed ? sample.premed : sample.standard;
+  const grid = (o.premed && sample.premed) || sample.standard;
   const kept = Object.fromEntries(Object.entries(plan.terms).map(([t, items]) => [t, items.filter((it) => !it.auto)]));
   const base: Plan = { ...plan, terms: kept, numTerms: o.semesterCount };
   const sems = semesters(plan, o.semesterCount);
@@ -199,7 +199,7 @@ export function autoPlan(o: AutoPlanOptions): {
     ];
     // major electives stay behind the courses the catalog lists before them;
     // general ones (FA3/FA4, free) can go anywhere
-    const major = e.slot === 'core-elective' || e.slot === 'design' || e.slot === 'focus';
+    const major = e.slot === 'core-elective' || e.slot === 'design' || e.slot === 'focus' || e.slot === 'major';
     // first to give way: earlier than the catalog has it only into a gap, and
     // no term far above the even share (so the last one isn't left nearly empty)
     checks.unshift(
@@ -247,7 +247,7 @@ export function autoPlan(o: AutoPlanOptions): {
     plan: {
       ...base,
       maxCredits,
-      autoPlan: { premed: o.premed, semesterCount: o.semesterCount, focusName: o.focusName },
+      autoPlan: { premed: o.premed, semesterCount: o.semesterCount, focusName: o.focusName, templateId: sample.templateId },
       terms,
       templates: [...new Set([...plan.templates, ...templates])],
       assign: {
