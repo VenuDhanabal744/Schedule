@@ -81,8 +81,10 @@ export type PlannerData = {
   school: string;
   terms: string[]; // imported terms, oldest first
   courses: IndexCourse[];
-  templates: ReqTemplate[];
+  templates: ReqSummary[]; // full templates load on demand
 };
+
+export type ReqSummary = { id: string; name: string; generated?: boolean };
 
 export type CourseInfo = {
   code: string;
@@ -127,5 +129,6 @@ export type ReqTemplate = {
   source: string;
   note: string;
   totalCredits?: number;
+  generated?: boolean; // built by server/requirements.js from the catalog page
   groups: ReqGroup[];
 };

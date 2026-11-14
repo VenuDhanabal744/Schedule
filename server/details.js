@@ -34,7 +34,7 @@ export function readCatalogs(school) {
     .sort((a, b) => termOrder(a.term) - termOrder(b.term));
 }
 
-async function pool(items, concurrency, fn) {
+export async function pool(items, concurrency, fn) {
   let next = 0;
   await Promise.all(
     Array.from({ length: concurrency }, async () => {
@@ -43,7 +43,7 @@ async function pool(items, concurrency, fn) {
   );
 }
 
-async function fetchRetry(url, parse) {
+export async function fetchRetry(url, parse) {
   for (let attempt = 1; ; attempt++) {
     try {
       const res = await fetch(url, {

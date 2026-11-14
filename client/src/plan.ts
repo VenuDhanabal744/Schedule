@@ -30,6 +30,7 @@ export type Plan = {
   terms: Record<string, PlanItem[]>; // by term name; PRIOR for prior credit
   templates: string[]; // active requirement template ids
   assign: Record<string, Record<string, string>>; // template id -> item id -> group id
+  hidden: Record<string, string[]>; // template id -> group ids marked "doesn't apply"
 };
 
 export const PRIOR = 'Prior credit';
@@ -46,6 +47,7 @@ export const defaultPlan = (): Plan => ({
   terms: {},
   templates: [],
   assign: {},
+  hidden: {},
 });
 
 const planKey = (school: string) => `plan:v1:${school}`;

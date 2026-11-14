@@ -212,15 +212,35 @@ function plannerData(school) {
   return data;
 }
 
-// Requirement templates are plain JSON files; each names its school.
+// Requirement templates: hand-written files in data/requirements/*.json, plus
+// the generated per-school files in data/requirements/generated/ (see
+// requirements.js). A hand-written template replaces a generated one for the
+// same catalog page.
+const REQ_DIR = path.join(DATA_DIR, 'requirements');
+const templateCache = new Map();
 function requirementTemplates(school) {
-  const dir = path.join(DATA_DIR, 'requirements');
-  if (!fs.existsSync(dir)) return [];
-  return fs
-    .readdirSync(dir)
-    .filter((f) => f.endsWith('.json'))
-    .map((f) => readJson(path.join(dir, f)))
+  const files = [
+    ...(fs.existsSync(REQ_DIR) ? fs.readdirSync(REQ_DIR).filter((f) => f.endsWith('.json')) : []),
+    `generated/${school}.json`,
+  ]
+    .map((f) => path.join(REQ_DIR, f))
+    .filter((f) => fs.existsSync(f));
+  const stamp = files.map((f) => `${f}:${fs.statSync(f).mtimeMs}`).join('|');
+  const cached = templateCache.get(school);
+  if (cached?.stamp === stamp) return cached.templates;
+
+  const hand = files
+    .filter((f) => !f.includes(`${path.sep}generated${path.sep}`))
+    .map(readJson)
     .filter((t) => t?.school === school);
+  const sourceKey = (t) => String(t.source ?? '').replace(/\/+$/, '');
+  const taken = new Set(hand.flatMap((t) => [t.id, sourceKey(t)]));
+  const generated = (readJson(path.join(REQ_DIR, 'generated', `${school}.json`))?.templates ?? []).filter(
+    (t) => !taken.has(t.id) && !taken.has(sourceKey(t))
+  );
+  const templates = [...hand, ...generated];
+  templateCache.set(school, { stamp, templates });
+  return templates;
 }
 
 app.get('/api/planner', (req, res) => {
@@ -231,8 +251,17 @@ app.get('/api/planner', (req, res) => {
     school,
     terms: data.catalogs.map((c) => c.term),
     courses: data.index,
-    templates: requirementTemplates(school),
+    // names only: the full templates are fetched one at a time when chosen
+    templates: requirementTemplates(school).map(({ id, name, generated }) => ({ id, name, ...(generated ? { generated } : {}) })),
   });
+});
+
+app.get('/api/requirements', (req, res) => {
+  const school = String(req.query.school ?? 'jhu');
+  if (!SCHOOLS[school]) return res.status(400).json({ error: `Unknown school "${school}"` });
+  const t = requirementTemplates(school).find((x) => x.id === String(req.query.id ?? ''));
+  if (!t) return res.status(404).json({ error: 'No such requirement template' });
+  res.json(t);
 });
 
 // Everything known about one course: description/prerequisites and its

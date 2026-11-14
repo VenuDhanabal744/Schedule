@@ -10,7 +10,8 @@
     "build": "npm install --prefix client && npm run build --prefix client",
     "start": "node server/index.js",
     "details": "node server/details.js",
-    "test": "npm test --prefix client"
+    "test": "npm test --prefix client && node --test server/*.test.js",
+    "requirements": "node server/requirements.js"
   },
   "engines": {
     "node": ">=22"

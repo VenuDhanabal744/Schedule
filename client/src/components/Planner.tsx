@@ -11,7 +11,7 @@ import {
 } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import type { IndexCourse, PlannerData, ReqTemplate } from '../types';
-import { fetchPlannerData } from '../api';
+import { fetchPlannerData, fetchRequirementTemplate } from '../api';
 import {
   PRIOR,
   catalogTerm,
@@ -280,7 +280,15 @@ function TermColumn({
   );
 }
 
-function Progress({ p, title }: { p: GroupProgress; title: (id: string) => string }) {
+function Progress({
+  p,
+  title,
+  onHide,
+}: {
+  p: GroupProgress;
+  title: (id: string) => string;
+  onHide?: () => void;
+}) {
   const pct = (n: number) => `${p.need ? Math.min(100, (n / p.need) * 100) : 0}%`;
   const met = p.have >= p.need;
   return (
@@ -293,6 +301,11 @@ function Progress({ p, title }: { p: GroupProgress; title: (id: string) => strin
         <span className="req-count">
           {p.have}/{p.need} {p.unit}
         </span>
+        {onHide && (
+          <button className="req-hide" onClick={onHide} title="Doesn't apply to me (e.g. another track) — hide it">
+            Hide
+          </button>
+        )}
       </div>
       <div className="req-bar" role="progressbar" aria-valuenow={p.have} aria-valuemax={p.need} aria-label={p.group.name}>
         <div className="req-bar-have" style={{ width: pct(p.have) }} />
@@ -334,11 +347,24 @@ export function Planner({
   const [openCard, setOpenCard] = useState<string | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  // full requirement templates, fetched when chosen
+  const [loaded, setLoaded] = useState<Record<string, ReqTemplate | 'loading' | 'failed'>>({});
+  const [reqQuery, setReqQuery] = useState('');
 
   useEffect(() => {
     fetchPlannerData(school).then(setData, (e) => setError(e.message));
   }, [school]);
   useEffect(() => savePlan(school, plan), [school, plan]);
+  useEffect(() => {
+    for (const id of plan.templates) {
+      if (id in loaded) continue;
+      setLoaded((l) => ({ ...l, [id]: 'loading' }));
+      fetchRequirementTemplate(school, id).then(
+        (t) => setLoaded((l) => ({ ...l, [id]: t })),
+        () => setLoaded((l) => ({ ...l, [id]: 'failed' }))
+      );
+    }
+  }, [school, plan.templates, loaded]);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
@@ -431,7 +457,20 @@ export function Planner({
     setCustom({ ...custom, title: '' });
   };
 
-  const activeTemplates = (data?.templates ?? []).filter((t) => plan.templates.includes(t.id));
+  // hidden groups ("not my track") drop out before matching, so they can't claim courses
+  const activeTemplates = plan.templates.flatMap((id) => {
+    const t = loaded[id];
+    return typeof t === 'object' ? [{ ...t, groups: t.groups.filter((g) => !plan.hidden[id]?.includes(g.id)) }] : [];
+  });
+  const setHidden = (id: string, groups: string[]) =>
+    setPlan((p) => ({ ...p, hidden: { ...p.hidden, [id]: groups } }));
+  const reqMatches = useMemo(() => {
+    const words = reqQuery.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!words.length || !data) return [];
+    return data.templates.filter(
+      (t) => !plan.templates.includes(t.id) && words.every((w) => t.name.toLowerCase().includes(w))
+    );
+  }, [reqQuery, data, plan.templates]);
   const items = useMemo(() => reqItems(plan, index), [plan, index]);
   const titleOf = (id: string) => {
     const it = Object.values(plan.terms).flat().find((x) => x.id === id);
@@ -543,49 +582,96 @@ export function Planner({
                   No requirement templates for this school yet. Add a JSON file to server/data/requirements/ (see the README).
                 </div>
               )}
-              {data?.templates.map((t) => (
-                <label key={t.id} className="check">
+              {data && data.templates.length > 0 && (
+                <>
                   <input
-                    type="checkbox"
-                    checked={plan.templates.includes(t.id)}
-                    onChange={(e) =>
-                      setPlan((p) => ({
-                        ...p,
-                        templates: e.target.checked ? [...p.templates, t.id] : p.templates.filter((id) => id !== t.id),
-                      }))
-                    }
+                    className="search-input"
+                    placeholder={`Add a major — search ${data.templates.length} programs…`}
+                    value={reqQuery}
+                    onChange={(e) => setReqQuery(e.target.value)}
                   />
-                  {t.name}
-                </label>
-              ))}
+                  {reqMatches.slice(0, 8).map((t) => (
+                    <button
+                      key={t.id}
+                      className="req-pick"
+                      onClick={() => {
+                        setPlan((p) => ({ ...p, templates: [...p.templates, t.id] }));
+                        setReqQuery('');
+                      }}
+                    >
+                      + {t.name}
+                      {!t.generated && <span className="req-curated">curated</span>}
+                    </button>
+                  ))}
+                  {reqMatches.length > 8 && <div className="result-count">{reqMatches.length - 8} more — refine your search</div>}
+                  {reqQuery.trim() && !reqMatches.length && <div className="result-count">No matching programs</div>}
+                </>
+              )}
               <div className="results">
-                {activeTemplates.map((t) => (
-                  <div key={t.id} className="req-template">
-                    <h3>{t.name}</h3>
-                    <div className="req-note">
-                      {t.note}{' '}
-                      <a href={t.source} target="_blank" rel="noreferrer">
-                        Source
-                      </a>
+                {plan.templates.map((id) => {
+                  const t = activeTemplates.find((x) => x.id === id);
+                  const name = data?.templates.find((x) => x.id === id)?.name ?? id;
+                  const remove = (
+                    <button
+                      className="req-hide"
+                      onClick={() => setPlan((p) => ({ ...p, templates: p.templates.filter((x) => x !== id) }))}
+                    >
+                      Remove
+                    </button>
+                  );
+                  if (!t) {
+                    return (
+                      <div key={id} className="req-template">
+                        <h3>
+                          {name} {remove}
+                        </h3>
+                        <div className="req-note">
+                          {loaded[id] === 'failed' ? 'This program is no longer available — remove it.' : 'Loading…'}
+                        </div>
+                      </div>
+                    );
+                  }
+                  const hidden = plan.hidden[id] ?? [];
+                  return (
+                    <div key={id} className="req-template">
+                      <h3>
+                        {t.name} {remove}
+                      </h3>
+                      <div className="req-note">
+                        {t.note}{' '}
+                        <a href={t.source} target="_blank" rel="noreferrer">
+                          Source
+                        </a>
+                      </div>
+                      {t.totalCredits != null && (
+                        <Progress
+                          title={titleOf}
+                          p={{
+                            group: { id: 'total', name: 'Total credits' },
+                            unit: 'credits',
+                            need: t.totalCredits,
+                            have: totalCredits,
+                            done: doneCredits,
+                            itemIds: [],
+                          }}
+                        />
+                      )}
+                      {matchRequirements(t, items, plan.assign[id]).map((p) => (
+                        <Progress
+                          key={p.group.id}
+                          p={p}
+                          title={titleOf}
+                          onHide={() => setHidden(id, [...hidden, p.group.id])}
+                        />
+                      ))}
+                      {hidden.length > 0 && (
+                        <button className="req-unhide" onClick={() => setHidden(id, [])}>
+                          Show {hidden.length} hidden group{hidden.length === 1 ? '' : 's'}
+                        </button>
+                      )}
                     </div>
-                    {t.totalCredits != null && (
-                      <Progress
-                        title={titleOf}
-                        p={{
-                          group: { id: 'total', name: 'Total credits' },
-                          unit: 'credits',
-                          need: t.totalCredits,
-                          have: totalCredits,
-                          done: doneCredits,
-                          itemIds: [],
-                        }}
-                      />
-                    )}
-                    {matchRequirements(t, items, plan.assign[t.id]).map((p) => (
-                      <Progress key={p.group.id} p={p} title={titleOf} />
-                    ))}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

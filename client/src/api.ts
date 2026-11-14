@@ -1,4 +1,4 @@
-import type { Course, CourseInfo, PlannerData, Rating } from './types';
+import type { Course, CourseInfo, PlannerData, Rating, ReqTemplate } from './types';
 
 export type TermOption = { name: string; code: string };
 
@@ -42,6 +42,14 @@ export async function fetchCourses(school: string, term: string): Promise<Course
 export async function fetchPlannerData(school: string): Promise<PlannerData> {
   const res = await fetch(`/api/planner?school=${encodeURIComponent(school)}`);
   if (!res.ok) throw new Error('Failed to load planner data');
+  return res.json();
+}
+
+export async function fetchRequirementTemplate(school: string, id: string): Promise<ReqTemplate> {
+  const res = await fetch(
+    `/api/requirements?school=${encodeURIComponent(school)}&id=${encodeURIComponent(id)}`
+  );
+  if (!res.ok) throw new Error((await res.json()).error ?? 'Failed to load requirements');
   return res.json();
 }
 
