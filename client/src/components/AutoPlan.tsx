@@ -44,7 +44,7 @@ export function AutoPlan({
     // without the template the plan is still built; it just can't tell which
     // of your own courses already fill an elective slot
     const template = await fetchRequirementTemplate(school, sample.templateId).catch(() => undefined);
-    const { plan: next, unplaced } = autoPlan({
+    const { plan: next, unplaced, skipped } = autoPlan({
       plan,
       sample,
       premed,
@@ -65,6 +65,13 @@ export function AutoPlan({
             `${unplaced.length} did not fit under ${max} credits (${unplaced.reduce((n, e) => n + e.credits, 0)} cr): ${unplaced
               .map((e) => e.codes?.[0] ?? e.label)
               .join(', ')}. Raise the cap or graduate later.`,
+          ]
+        : []),
+      ...(skipped.length
+        ? [
+            `Left out ${skipped.join(', ')}: courses you already have come after ${
+              skipped.length === 1 ? 'it' : 'them'
+            } or rule ${skipped.length === 1 ? 'it' : 'them'} out. If the Requirements tab still lists one, add your exam credit under Prior credit.`,
           ]
         : []),
       ...(flagged.length ? [`⚠ ${flagged.length} of them show${flagged.length === 1 ? 's' : ''} a prerequisite or offering warning to review.`] : []),

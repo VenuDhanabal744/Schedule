@@ -56,8 +56,7 @@
       "courses": [
         "AS.030.101",
         "AS.030.105",
-        "AS.030.102",
-        "AS.030.106",
+        { "label": "Introductory Chemistry II and lab", "oneOf": [["AS.030.102", "AS.030.106"], "AS.030.103"] },
         { "label": "General Physics I", "oneOf": ["AS.171.101", "AS.171.107"] },
         "AS.173.111",
         { "label": "General Physics II", "oneOf": ["AS.171.102", "AS.171.108"] },
