@@ -1,8 +1,11 @@
+import type { ReqTemplate } from './types';
+
 // Sample programs of study, transcribed from a program's catalog page. The
 // auto-planner uses them for course ORDER only; the requirement templates say
 // what is required.
 
-export type Slot = 'core-elective' | 'design' | 'focus' | 'fa3' | 'fa4' | 'fa3-fa4' | 'free';
+// 'major': any other elective a generated sample names ("Upper Level Biology Elective")
+export type Slot = 'core-elective' | 'design' | 'focus' | 'fa3' | 'fa4' | 'fa3-fa4' | 'free' | 'major';
 
 // A row of the catalog's grid: a course (first code is the one the catalog
 // lists, the rest are the alternatives it names) or a slot the student fills.
@@ -17,7 +20,7 @@ export type SamplePlan = {
   focusAreas: { tag: string; name: string }[]; // SIS program-of-study tags
   // one list per semester, the first one a Fall
   standard: SampleEntry[][];
-  premed: SampleEntry[][];
+  premed?: SampleEntry[][]; // without one, pre-med only turns on the checklist
 };
 
 const c = (credits: number, ...codes: string[]): SampleEntry => ({ codes, credits });
@@ -70,5 +73,19 @@ const jhuBme: SamplePlan = {
   ],
 };
 
-// by school; one program each for now
-export const samplePlans: Record<string, SamplePlan> = { jhu: jhuBme };
+// hand-transcribed samples, by requirement template id; they replace the
+// generated sample for the same program
+export const samplePlans: Record<string, SamplePlan> = { [jhuBme.templateId]: jhuBme };
+
+// A sample the requirements generator read from the template's catalog page.
+export const sampleFor = (t: ReqTemplate): SamplePlan | undefined =>
+  samplePlans[t.id] ??
+  (t.sample && {
+    name: t.name,
+    source: t.source,
+    templateId: t.id,
+    premedTemplateId: 'jhu-premed', // shortcut: only JHU templates carry samples
+    slotGroups: {},
+    focusAreas: [],
+    standard: t.sample,
+  });

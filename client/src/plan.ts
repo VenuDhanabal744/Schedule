@@ -33,7 +33,7 @@ export type Plan = {
   assign: Record<string, Record<string, string>>; // template id -> item id -> group id
   hidden: Record<string, string[]>; // template id -> group ids marked "doesn't apply"
   // settings of the last auto-plan, so it can be redone when a semester is marked done
-  autoPlan?: { premed: boolean; semesterCount: number; focusName?: string };
+  autoPlan?: { premed: boolean; semesterCount: number; focusName?: string; templateId?: string };
 };
 
 export const PRIOR = 'Prior credit';

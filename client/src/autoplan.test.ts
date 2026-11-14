@@ -3,9 +3,9 @@ import type { IndexCourse } from './types';
 import { autoPlan, rankFocusAreas, semesters } from './autoplan';
 import { defaultPlan, planWarnings, termCredits } from './plan';
 import type { Plan, PlanItem } from './plan';
-import { samplePlans } from './samplePlans';
+import { samplePlans, sampleFor } from './samplePlans';
 
-const sample = samplePlans.jhu;
+const sample = samplePlans['jhu-bme-bs'];
 const TERMS = ['Fall 2026', 'Spring 2027'];
 const course = (code: string, extra: Partial<IndexCourse> = {}): IndexCourse => ({
   code,
@@ -54,6 +54,30 @@ describe('autoPlan', () => {
     expect(credits(plan).reduce((a, b) => a + b)).toBe(130);
     expect(codes(plan, 'Fall 2027')).toContain('AS.030.205');
     expect(plan.templates).toEqual(['jhu-bme-bs', 'jhu-premed']);
+  });
+
+  it('plans a generated major from its template’s sample; pre-med only adds the checklist', () => {
+    const template = {
+      id: 'jhu-history-bachelor-arts',
+      school: 'jhu',
+      name: 'History, Bachelor of Arts',
+      source: 'https://e-catalogue.jhu.edu/history/',
+      note: '',
+      groups: [],
+      sample: [
+        [{ credits: 3, codes: ['AS.100.101'] }, { credits: 3, slot: 'free' as const, label: 'Free Elective' }],
+        [{ credits: 3, slot: 'major' as const, label: 'AS.100.3xx History Elective' }],
+      ],
+    };
+    const generated = sampleFor(template)!;
+    const { plan, unplaced } = run({ sample: generated, premed: true, semesterCount: 2 });
+    expect(unplaced).toEqual([]);
+    expect(codes(plan, 'Fall 2026')).toEqual(['AS.100.101', 'Free Elective']);
+    expect(codes(plan, 'Spring 2027')).toEqual(['AS.100.3xx History Elective']);
+    expect(plan.templates).toEqual(['jhu-history-bachelor-arts', 'jhu-premed']);
+    expect(plan.autoPlan?.templateId).toBe('jhu-history-bachelor-arts');
+    // the hand-written BME sample wins over a generated one
+    expect(sampleFor({ ...template, id: 'jhu-bme-bs' })).toBe(sample);
   });
 
   it('never exceeds the credit cap and reports what does not fit', () => {

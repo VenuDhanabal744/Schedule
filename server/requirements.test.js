@@ -1,7 +1,7 @@
 // node --test server/  (run by npm test)
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildGroups, parseProgramPage, parseRows, quantity } from './requirements.js';
+import { buildGroups, parsePlanGrid, parseProgramPage, parseRows, quantity } from './requirements.js';
 
 const course = (code, cls = 'odd', indent = false) =>
   `<tr class="${cls}"><td class="codecol${cls.includes('orclass') ? ' orclass' : ''}">${
@@ -94,4 +94,22 @@ test('parseProgramPage reads the Requirements tab and names the template', () =>
 test('a page without course lists still gets a placeholder group', () => {
   const t = parseProgramPage('<h1>X</h1><div id="textcontainer"><p>Not offered.</p></div>', 'https://c.edu/x/', 'jhu');
   assert.deepEqual(t.groups.map((g) => [g.id, g.todo]), [['major-courses', true]]);
+});
+
+test('plan grid: side-by-side Fall | Spring years and stacked terms', () => {
+  const cell = (y, t, inner, hrs) =>
+    `<td header="year${y} year${y}_Term${t}_codecol" class="codecol">${inner}</td><td header="x" class="hourscol">${hrs}</td>`;
+  const link = (c) => `<a href="#" title="${c}" class="bubblelink code">${c}</a>`;
+  const side = `<table class="sc_plangrid"><tr class="plangridyear"><th>First Year</th></tr><tr class="even">${cell(0, 0, link('AS.171.101') + ' or ' + link('AS.171.107'), '4')}${cell(0, 1, 'Free Elective', '3')}</tr><tr class="odd">${cell(0, 0, 'Course with EN Foundational Ability tag FA3 (Creative Expression)', '3')}${cell(0, 1, 'Additional language study (optional)', '')}</tr><tr class="even">${cell(1, 1, 'Upper Level Biology Elective', '')}<td></td><td></td></tr></table>`;
+  assert.deepEqual(parsePlanGrid(side), [
+    [{ credits: 4, codes: ['AS.171.101', 'AS.171.107'] }, { credits: 3, slot: 'fa3', label: 'Course with EN Foundational Ability tag FA3 (Creative Expression)' }],
+    [{ credits: 3, slot: 'free', label: 'Free Elective' }],
+    [],
+    [{ credits: 3, slot: 'major', label: 'Upper Level Biology Elective' }],
+  ]);
+  const row = (term, code, hrs) =>
+    `<tr class="even"><td headers=" ab_plangrid1_0_${term}" class="codecol">${code}</td><td class="titlecol">T</td><td headers=" ab_plangrid1_0_${term} h" class="hourscol">${hrs}</td></tr>`;
+  const stacked = `<table pdfnorepeatheader="true" class="sc_plangrid">${row(0, link('PY.260.261'), '3')}${row(1, '<span class="comment">PY.510.120</span>', '1')}</table>`;
+  assert.deepEqual(parsePlanGrid(stacked), [[{ credits: 3, codes: ['PY.260.261'] }], [{ credits: 1, codes: ['PY.510.120'] }]]);
+  assert.equal(parsePlanGrid('<p>no grid</p>'), null);
 });
