@@ -35,8 +35,9 @@ The repo already includes these catalogs, so the site works immediately:
 | Temple | Fall 2026, Spring 2027 |
 | UNC-Chapel Hill | Fall 2026 |
 
-It also includes course details (descriptions and prerequisites) for all three schools and
-two JHU degree-requirement templates.
+It also includes course details (descriptions and prerequisites) for all three schools, and
+requirement templates for every bachelor's program in the three catalogs (89 JHU, 239
+Temple, 96 UNC), plus two hand-checked JHU templates (BME B.S. and pre-med).
 
 1. Push this repo to GitHub.
 2. On [render.com](https://render.com): **New → Web Service**, connect the repo.
@@ -69,9 +70,27 @@ npm run details -- temple   # Temple bulletin
 npm run details -- unc      # UNC catalog
 ```
 
-**Requirement templates** (`server/data/requirements/*.json`) are hand-written JSON, one
-file per program; any file whose `"school"` matches shows up in the planner's Requirements
-tab. To add a minor, another major or another school, copy `jhu-bme-bs.json` and edit:
+**Requirement templates for every major** are generated from each school's online catalog
+(all three use CourseLeaf, whose program pages have machine-readable course-list tables):
+
+```
+npm run requirements -- jhu     # or temple, unc; a minute or two each
+```
+
+This writes `server/data/requirements/generated/<school>.json`. The generator reads the
+major's own course lists — required courses, "one of" choices, "N courses / N credits from"
+pools, and JHU POS and Foundational Ability tags. It does not cover university or
+school-wide requirements, and rules written only in prose ("any BIOL course above 200")
+become TODO groups you fill by assigning courses by hand. Programs with tracks list every
+track; hide the groups that don't apply. Pages with no course lists (mostly discontinued
+or combined bachelor's/master's programs) get a single placeholder group. Generated
+templates are unofficial — always check the linked catalog page.
+
+**Hand-written templates** (`server/data/requirements/*.json`) take precedence: one with
+the same `id` or `source` URL as a generated template replaces it. To fix up a generated
+template, copy its entry from the generated file into its own file and edit it there (a
+regeneration won't overwrite it). To add a minor, another major or another school, copy
+`jhu-bme-bs.json` and edit:
 
 ```jsonc
 {
@@ -103,7 +122,8 @@ tab. To add a minor, another major or another school, copy `jhu-bme-bs.json` and
 A course counts toward one group per template (checklists first, then pools, in file
 order) unless the group sets `"shared": true`; `"todo": true` shows a TODO badge, and
 `"note"` is displayed under the group. In the planner, a card's ⋯ menu can assign it to a
-group by hand. The two shipped templates were transcribed from the JHU e-catalogue and
+group by hand, and each group has a Hide button for requirements that don't apply to you
+(another track or focus area); hidden groups don't claim courses. The two shipped templates were transcribed from the JHU e-catalogue and
 Pre-Professional Advising pages named in their `source`; they are unofficial, and their
 `note` fields list what is not modelled.
 
@@ -117,8 +137,8 @@ Pre-Professional Advising pages named in their `source`; they are unofficial, an
   credit that "counts as" a course, study abroad); drag between semesters or use a card's
   ⋯ menu. Shows credits per term and cumulative, and warns — never blocks — about credit
   load, prerequisites not placed in an earlier term, courses placed in a season they
-  haven't been seen in, and duplicates. Requirement templates show a progress bar per
-  group. "Build this semester's schedule" loads a planned term into the scheduler, which
+  haven't been seen in, and duplicates. Search any major at your school in the
+  Requirements tab to track it with a progress bar per group. "Build this semester's schedule" loads a planned term into the scheduler, which
   lists planned courses you haven't added yet. Saved in the browser per school; export or
   import as JSON, and Print / PDF gives a one-page view.
 - **Course details** — the ⓘ button on any course (search results, My Courses, calendar

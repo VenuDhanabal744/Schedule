@@ -1676,3 +1676,59 @@ input[type='text'],
   align-items: stretch;
   gap: 3px;
 }
+
+/* ---------- requirement picker ---------- */
+.req-pick {
+  text-align: left;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 7px;
+  padding: 6px 9px;
+  font-size: 12.5px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.req-pick:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.req-curated {
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #15803d;
+  background: #dcfce7;
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.req-template h3 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.req-hide,
+.req-unhide {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 2px;
+  white-space: nowrap;
+}
+
+.req-hide:hover,
+.req-unhide:hover {
+  color: var(--accent);
+}
+
+.req-unhide {
+  margin-top: 6px;
+  text-decoration: underline;
+}
