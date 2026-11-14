@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { fmtReq, parsePrereqText, parseRawReqs, parseSisExpr, unmet } from './prereqs';
+import type { IndexCourse } from './types';
+import { courseReqs, credited, fmtReq, parsePrereqText, parseRawReqs, parseSisExpr, unmet } from './prereqs';
 
 const show = (text: string) => parsePrereqText(text).map((r) => fmtReq(r.tree));
 
@@ -93,5 +94,49 @@ describe('unmet', () => {
     expect(fmtReq(unmet(tree, new Set(), known)!)).toBe('AS.000.001'); // retired alternative dropped
     expect(unmet(tree, new Set(['AS.000.001']), known)).toBeNull(); // lab-safety style code ignored
     expect(unmet(parseSisExpr('EN.990.100[C]')!, new Set(), () => false)).toBeNull();
+  });
+});
+
+describe('courseReqs and credited', () => {
+  const c = (code: string, extra: Partial<IndexCourse> = {}): IndexCourse => ({
+    code,
+    title: code,
+    department: '',
+    credits: '3',
+    level: '',
+    areas: '',
+    writingIntensive: false,
+    terms: [],
+    ...extra,
+  });
+  const index = new Map(
+    [
+      c('AS.030.101'),
+      c('AS.030.102', {
+        prereqs: [
+          { text: 'Antirequisite', expr: 'AS.030.103[C]', negative: true },
+          { text: '', expr: 'AS.030.101[C]' },
+        ],
+      }),
+      c('AS.030.103'),
+      c('AS.030.205', { prereqs: [{ text: '', expr: 'AS.030.102[C]^OR^AS.030.103[C]' }] }),
+      c('AS.030.206', {
+        prereqs: [{ text: '', expr: 'AS.030.205[C]' }],
+        coreqs: [{ text: 'Students may not simultaneously enroll for AS.030.212 and AS.030.206.', expr: 'AS.030.212[C]' }],
+      }),
+      c('EN.580.231', { coreqs: [{ text: 'EN.580.233', expr: 'EN.580.233[C]' }] }),
+    ].map((x) => [x.code, x])
+  );
+
+  it('reads corequisites as same-term requirements and skips "may not enroll together"', () => {
+    expect(courseReqs(index.get('EN.580.231'))).toEqual([{ tree: { code: 'EN.580.233' }, concurrent: true, coreq: true }]);
+    expect(courseReqs(index.get('AS.030.206'))).toEqual([{ tree: { code: 'AS.030.205' }, concurrent: false }]);
+  });
+
+  it('credits the courses a held course stands in for, and what those require', () => {
+    // 103 bars 102, so it stands in for it; 102 cannot be had without 101
+    expect([...credited(['AS.030.103'], index)].sort()).toEqual(['AS.030.101', 'AS.030.102', 'AS.030.103']);
+    // "102 or 103" proves neither on its own
+    expect([...credited(['AS.030.205'], index)]).toEqual(['AS.030.205']);
   });
 });

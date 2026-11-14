@@ -1,7 +1,7 @@
 import type { IndexCourse, ReqTemplate } from './types';
 import { itemCodes, newId, offeringPattern, reqItems, termCredits, termOrder, termSeason } from './plan';
 import type { Plan, PlanItem } from './plan';
-import { parseRawReqs, unmet } from './prereqs';
+import { courseReqs, credited, reqCodes, unmet } from './prereqs';
 import { areaTags, matchRequirements, slotOptions } from './requirements';
 import type { SampleEntry, SamplePlan } from './samplePlans';
 
@@ -167,22 +167,35 @@ export function autoPlan(o: AutoPlanOptions): {
 
   for (const { e, s, code } of todo) {
     const course = code ? index.get(code) : undefined;
-    const pattern = course && offeringPattern(course.terms, o.imported);
+    // the one season a course has been seen in, if only one
+    const only = (c: IndexCourse | undefined) => {
+      const pattern = c && offeringPattern(c.terms, o.imported);
+      return pattern === 'both' ? null : pattern;
+    };
     // a two-semester design sequence keeps the catalog's season
-    const season = e.slot === 'design' ? (s % 2 ? 'Spring' : 'Fall') : pattern === 'both' ? null : pattern;
-    const reqs = parseRawReqs(course?.prereqs);
+    const season = e.slot === 'design' ? (s % 2 ? 'Spring' : 'Fall') : only(course);
+    const reqs = courseReqs(course);
+    const names = (c: string | undefined, other: string) =>
+      courseReqs(c ? index.get(c) : undefined).some((r) => r.coreq && reqCodes(r.tree).includes(other));
+    // corequisites still to be placed: they will share this course's term, so
+    // leave room for them
+    const partners = todo.filter((t) => t.code && code && t.code !== code && !when.has(t.code) && names(code, t.code));
+    const room = e.credits + partners.reduce((n, t) => n + t.e.credits, 0);
+    // a course already placed that names this one as a corequisite fixes its term
+    const tied = Math.min(...[...when].filter(([c]) => code && names(c, code)).map(([, at]) => at));
     const checks = [
       (i: number) => {
         const order = termOrder(open[i]);
-        return reqs.every((r) => {
-          const have = new Set(
-            [...when].filter(([, at]) => at < order || (r.concurrent && at === order)).map(([x]) => x)
-          );
-          return !unmet(r.tree, have, (x) => index.has(x));
-        });
+        if (order > tied) return false;
+        const held = (same: boolean) =>
+          [...when].filter(([, at]) => (same ? at === order : at < order)).map(([c]) => c);
+        const before = credited(held(false), index);
+        const now = new Set([...before, ...held(true), ...partners.map((t) => t.code!)]);
+        return reqs.every((r) => !unmet(r.tree, r.concurrent ? now : before, (c) => index.has(c)));
       },
-      (i: number) => !season || termSeason(open[i]) === season,
-      (i: number) => load[i] + e.credits <= maxCredits && (e.slot !== 'design' || i > lastDesign),
+      (i: number) =>
+        [season, ...partners.map((t) => only(index.get(t.code!)))].every((x) => !x || termSeason(open[i]) === x),
+      (i: number) => load[i] + room <= maxCredits && (e.slot !== 'design' || i > lastDesign),
     ];
     // major electives stay behind the courses the catalog lists before them;
     // general ones (FA3/FA4, free) can go anywhere
@@ -191,7 +204,7 @@ export function autoPlan(o: AutoPlanOptions): {
     // no term far above the even share (so the last one isn't left nearly empty)
     checks.unshift(
       (i: number) => i >= slotOf(s) || (load[i] < level[i] && (!major || i >= lastCoded)),
-      (i: number) => load[i] + e.credits <= Math.ceil(even) + 1
+      (i: number) => load[i] + room <= Math.ceil(even) + 1
     );
     const gap = load.findIndex((l, i) => l < level[i]);
     const want = gap < 0 ? slotOf(s) : Math.min(slotOf(s), gap);
@@ -234,6 +247,7 @@ export function autoPlan(o: AutoPlanOptions): {
     plan: {
       ...base,
       maxCredits,
+      autoPlan: { premed: o.premed, semesterCount: o.semesterCount, focusName: o.focusName },
       terms,
       templates: [...new Set([...plan.templates, ...templates])],
       assign: {

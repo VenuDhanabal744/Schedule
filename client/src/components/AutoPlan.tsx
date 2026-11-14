@@ -26,10 +26,13 @@ export function AutoPlan({
   onClose: () => void;
 }) {
   const options = semesters(plan, 12);
-  const [count, setCount] = useState(Math.min(12, Math.max(8, plan.numTerms)));
+  const last = plan.autoPlan; // settings of the previous run
+  const [count, setCount] = useState(last?.semesterCount ?? Math.min(12, Math.max(8, plan.numTerms)));
   const [max, setMax] = useState(plan.maxCredits || 18);
-  const [premed, setPremed] = useState(false);
-  const [focus, setFocus] = useState<string | null>(null); // null: not chosen by hand
+  const [premed, setPremed] = useState(last?.premed ?? false);
+  const [focus, setFocus] = useState<string | null>(
+    sample.focusAreas.find((f) => f.name === last?.focusName)?.tag ?? null // null: not chosen by hand
+  );
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string[] | null>(null);
 
@@ -154,6 +157,7 @@ export function AutoPlan({
                   onClick={() => {
                     onApply({
                       ...plan,
+                      autoPlan: undefined,
                       terms: Object.fromEntries(Object.entries(plan.terms).map(([t, items]) => [t, items.filter((it) => !it.auto)])),
                     });
                     onClose();

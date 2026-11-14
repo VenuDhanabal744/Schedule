@@ -1,5 +1,5 @@
 import type { IndexCourse } from './types';
-import { parseRawReqs, unmet, fmtReq } from './prereqs';
+import { courseReqs, credited, unmet, fmtReq } from './prereqs';
 import { areaTags } from './requirements';
 import type { ReqItem } from './requirements';
 
@@ -32,6 +32,8 @@ export type Plan = {
   templates: string[]; // active requirement template ids
   assign: Record<string, Record<string, string>>; // template id -> item id -> group id
   hidden: Record<string, string[]>; // template id -> group ids marked "doesn't apply"
+  // settings of the last auto-plan, so it can be redone when a semester is marked done
+  autoPlan?: { premed: boolean; semesterCount: number; focusName?: string };
 };
 
 export const PRIOR = 'Prior credit';
@@ -157,6 +159,10 @@ export function planWarnings(
   for (const term of termSequence(plan)) {
     const items = plan.terms[term] ?? [];
     const sameTerm = new Set(items.flatMap(itemCodes));
+    // what the student is past before this term, and with this term's courses
+    // (taken as they are: a course can't vouch for its own prerequisites)
+    const past = credited(earlier, index);
+    const pastNow = new Set([...past, ...sameTerm]);
     for (const it of items) {
       const course = it.code ? index.get(it.code) : undefined;
       if (!it.code) continue;
@@ -169,13 +175,12 @@ export function planWarnings(
 
       if (term === PRIOR || !course) continue;
 
-      for (const req of parseRawReqs(course.prereqs)) {
-        const have = req.concurrent ? new Set([...earlier, ...sameTerm]) : earlier;
-        const missing = unmet(req.tree, have, (c) => index.has(c));
+      for (const req of courseReqs(course)) {
+        const missing = unmet(req.tree, req.concurrent ? pastNow : past, (c) => index.has(c));
         if (missing) {
           warn(it.id, {
             kind: 'prereq',
-            text: `Prerequisite not in an earlier term: ${fmtReq(missing)}`,
+            text: `${req.coreq ? 'Corequisite not in this term' : req.concurrent ? 'Prerequisite not in this or an earlier term' : 'Prerequisite not in an earlier term'}: ${fmtReq(missing)}`,
           });
         }
       }
