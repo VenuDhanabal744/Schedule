@@ -1653,6 +1653,42 @@ input[type='text'],
   border: 1px solid var(--border);
 }
 
+/* ---------- auto-plan dialog ---------- */
+.auto-modal {
+  width: 520px;
+}
+
+.auto-modal select,
+.auto-modal input[type='number'] {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  max-width: 100%;
+}
+
+.auto-check {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 13px;
+}
+
+.auto-focus {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.plan-toolbar .gen-buttons .plan-auto {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 @media (max-width: 860px) {
   .compare-bar {
     flex-wrap: wrap;

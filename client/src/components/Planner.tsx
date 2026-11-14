@@ -30,6 +30,8 @@ import {
 import type { Plan, PlanItem, PlanStatus, Warning } from '../plan';
 import { matchRequirements } from '../requirements';
 import type { GroupProgress } from '../requirements';
+import { samplePlans } from '../samplePlans';
+import { AutoPlan } from './AutoPlan';
 
 type Drag = { kind: 'item'; id: string; label: string } | { kind: 'new'; code: string; label: string };
 
@@ -350,6 +352,8 @@ export function Planner({
   // full requirement templates, fetched when chosen
   const [loaded, setLoaded] = useState<Record<string, ReqTemplate | 'loading' | 'failed'>>({});
   const [reqQuery, setReqQuery] = useState('');
+  const [autoOpen, setAutoOpen] = useState(false);
+  const sample = samplePlans[school];
 
   useEffect(() => {
     fetchPlannerData(school).then(setData, (e) => setError(e.message));
@@ -746,6 +750,11 @@ export function Planner({
                 cr
               </label>
               <div className="gen-buttons">
+                {sample && data && (
+                  <button className="plan-auto" onClick={() => setAutoOpen(true)}>
+                    Auto-plan
+                  </button>
+                )}
                 <button onClick={exportJson}>Export JSON</button>
                 <button onClick={() => fileInput.current?.click()}>Import JSON</button>
                 <button onClick={() => window.print()}>Print / PDF</button>
@@ -823,6 +832,17 @@ export function Planner({
         </div>
       </div>
       <DragOverlay dropAnimation={null}>{drag && <div className="drag-overlay c0">{drag.label}</div>}</DragOverlay>
+      {autoOpen && sample && (
+        <AutoPlan
+          school={school}
+          plan={plan}
+          sample={sample}
+          index={index}
+          imported={imported}
+          onApply={setPlan}
+          onClose={() => setAutoOpen(false)}
+        />
+      )}
     </DndContext>
   );
 }

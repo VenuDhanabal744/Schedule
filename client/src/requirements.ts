@@ -41,7 +41,7 @@ export function itemMatches(item: ReqItem, m: ReqMatch): boolean {
   );
 }
 
-const slotOptions = (slot: ReqSlot): string[][] =>
+export const slotOptions = (slot: ReqSlot): string[][] =>
   (typeof slot === 'string' ? [slot] : slot.oneOf).map((o) => (typeof o === 'string' ? [o] : o));
 
 export const slotLabel = (slot: ReqSlot): string =>

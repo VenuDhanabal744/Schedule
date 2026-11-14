@@ -16,6 +16,7 @@ export type PlanItem = {
   writingIntensive?: boolean;
   countsAs?: string[]; // course codes this stands in for (AP/transfer credit)
   repeatable?: boolean;
+  auto?: boolean; // placed by the auto-planner; replaced when it runs again
 };
 
 export type Plan = {
@@ -140,7 +141,7 @@ export const offeringLabel = (p: ReturnType<typeof offeringPattern>) =>
 
 export type Warning = { kind: 'prereq' | 'offering' | 'duplicate'; text: string };
 
-const itemCodes = (it: PlanItem) => [...(it.code ? [it.code] : []), ...(it.countsAs ?? [])];
+export const itemCodes = (it: PlanItem) => [...(it.code ? [it.code] : []), ...(it.countsAs ?? [])];
 
 // Soft checks for every planned course, keyed by item id. Nothing here blocks.
 export function planWarnings(
