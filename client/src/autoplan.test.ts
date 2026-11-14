@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IndexCourse } from './types';
 import { autoPlan, rankFocusAreas, semesters } from './autoplan';
-import { defaultPlan, termCredits } from './plan';
+import { defaultPlan, planWarnings, termCredits } from './plan';
 import type { Plan, PlanItem } from './plan';
 import { samplePlans } from './samplePlans';
 
@@ -141,6 +141,25 @@ describe('autoPlan', () => {
     expect(codes(plan, 'Fall 2026')).not.toContain('AS.030.101');
     expect(codes(plan, 'Spring 2027')).toEqual(expect.arrayContaining(['AS.030.101', 'AS.030.105']));
     expect(codes(plan, 'Fall 2027')).toContain('AS.030.102');
+  });
+
+  it('keeps corequisites together and accepts a course that stands in for a prerequisite', () => {
+    const index = indexOf(
+      // lecture and lab name each other; the lab only runs in Spring
+      course('EN.580.231', { coreqs: [{ text: 'EN.580.233', expr: 'EN.580.233[C]' }] }),
+      course('EN.580.233', { terms: ['Spring 2027'], coreqs: [{ text: 'EN.580.231', expr: 'EN.580.231[C]' }] }),
+      // EN.553.291 is barred after AS.110.201, so it stands in for it
+      course('AS.110.201', { prereqs: [{ text: 'not eligible', expr: 'EN.553.291[C]', negative: true }] }),
+      course('EN.553.291'),
+      course('EN.580.242', { prereqs: [{ text: '', expr: 'AS.110.201[C]' }] })
+    );
+    const { plan } = run({ index });
+    const termOf = (code: string) => Object.keys(plan.terms).find((t) => codes(plan, t).includes(code));
+    expect(termOf('EN.580.231')).toBe(termOf('EN.580.233'));
+    expect(termOf('EN.580.233')).toMatch(/^Spring/);
+    // 242 stays where the catalog has it: 291 the term before satisfies it
+    expect(termOf('EN.580.242')).toBe('Spring 2028');
+    expect([...planWarnings(plan, index, TERMS).values()].flat().filter((w) => w.kind === 'prereq')).toEqual([]);
   });
 
   it('names focus slots and counts slots toward their requirement group', () => {

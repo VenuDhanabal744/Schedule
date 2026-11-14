@@ -148,6 +148,11 @@ Pre-Professional Advising pages named in their `source`; they are unofficial, an
   the catalogue's pre-med sample and turns on the pre-med checklist; focus areas are ranked
   by their share of Natural Sciences courses. The sample lives in
   `client/src/samplePlans.ts`.
+- **Order check and Mark done** — the planner checks every course's prerequisites and
+  corequisites (a lecture and its lab must share a term) and says so above the grid. A
+  course the registrar bars after one you hold counts as taken (AS.030.103 for AS.030.102).
+  "Mark done" on a semester sets its courses completed; Auto-plan then leaves it alone and
+  lays the later semesters out again around what you actually took.
 - **Course details** — the ⓘ button on any course (search results, My Courses, calendar
   blocks) or a planner card opens its description, prerequisites, offering pattern,
   sections in every imported term, and ratings.

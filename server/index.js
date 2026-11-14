@@ -204,6 +204,7 @@ function plannerData(school) {
   for (const [code, entry] of byCode) {
     const d = details[code];
     if (d?.prereqs) entry.prereqs = d.prereqs;
+    if (d?.coreqs) entry.coreqs = d.coreqs;
     if (d?.posTags) entry.posTags = d.posTags;
     if (d?.repeatable) entry.repeatable = true;
   }

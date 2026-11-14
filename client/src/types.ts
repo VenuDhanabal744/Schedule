@@ -73,6 +73,7 @@ export type IndexCourse = {
   writingIntensive: boolean;
   terms: string[]; // imported terms it appears in
   prereqs?: RawReq[];
+  coreqs?: RawReq[];
   posTags?: string[];
   repeatable?: boolean;
 };

@@ -1,10 +1,11 @@
-import type { RawReq } from './types';
+import type { IndexCourse, RawReq } from './types';
 
 // A prerequisite tree: a course code, or all-of / any-of a list of subtrees.
 export type Req = { code: string } | { op: 'and' | 'or'; items: Req[] };
 
 // One checkable requirement. `concurrent`: may be taken in the same term.
-export type ParsedReq = { tree: Req; concurrent: boolean };
+// `coreq`: a corequisite (always concurrent).
+export type ParsedReq = { tree: Req; concurrent: boolean; coreq?: boolean };
 
 // Flatten nested same-op groups, drop duplicates, unwrap single-item groups.
 function group(op: 'and' | 'or', items: (Req | null)[]): Req | null {
@@ -177,6 +178,61 @@ export function parseRawReqs(raw: RawReq[] | undefined): ParsedReq[] {
     } else {
       out.push(...parsePrereqText(r.text));
     }
+  }
+  return out;
+}
+
+// "Students may not simultaneously enroll in X and Y" is filed as a corequisite
+const NOT_TOGETHER = /may not|cannot|not eligible/i;
+
+// Everything a course needs first or alongside: prerequisites and corequisites.
+export function courseReqs(course: Pick<IndexCourse, 'prereqs' | 'coreqs'> | undefined): ParsedReq[] {
+  const coreqs = (course?.coreqs ?? []).filter((r) => !NOT_TOGETHER.test(r.text));
+  return [
+    ...parseRawReqs(course?.prereqs),
+    ...parseRawReqs(coreqs).map((r) => ({ ...r, concurrent: true, coreq: true })),
+  ];
+}
+
+export const reqCodes = (req: Req): string[] => ('code' in req ? [req.code] : req.items.flatMap(reqCodes));
+
+// Codes a requirement cannot be met without (none for a plain "A or B").
+const mandatory = (req: Req): string[] => {
+  if ('code' in req) return [req.code];
+  const each = req.items.map(mandatory);
+  return req.op === 'and' ? each.flat() : each[0].filter((c) => each.every((codes) => codes.includes(c)));
+};
+
+// course -> the courses the registrar bars after it ("not eligible for
+// AS.030.102 after AS.030.103"), i.e. the ones it stands in for
+const standInCache = new WeakMap<Map<string, IndexCourse>, Map<string, string[]>>();
+function standIns(index: Map<string, IndexCourse>): Map<string, string[]> {
+  let map = standInCache.get(index);
+  if (!map) {
+    map = new Map();
+    for (const c of index.values()) {
+      for (const r of c.prereqs ?? []) {
+        if (!r.negative || !r.expr) continue;
+        const tree = parseSisExpr(r.expr);
+        for (const held of tree ? reqCodes(tree) : []) map.set(held, [...(map.get(held) ?? []), c.code]);
+      }
+    }
+    standInCache.set(index, map);
+  }
+  return map;
+}
+
+// The courses a student is past, given the ones they hold: those, the courses
+// each stands in for, and the prerequisites none of them could have skipped.
+export function credited(held: Iterable<string>, index: Map<string, IndexCourse>): Set<string> {
+  const out = new Set<string>();
+  const queue = [...held];
+  const bars = standIns(index);
+  for (let code = queue.pop(); code; code = queue.pop()) {
+    if (out.has(code)) continue;
+    out.add(code);
+    queue.push(...(bars.get(code) ?? []));
+    for (const r of parseRawReqs(index.get(code)?.prereqs)) queue.push(...mandatory(r.tree));
   }
   return out;
 }

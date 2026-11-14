@@ -1062,6 +1062,38 @@ input[type='text'],
   color: var(--muted);
 }
 
+.plan-term.done {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.plan-done {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 6px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.plan-done[aria-pressed='true'] {
+  border-color: #86efac;
+  color: #15803d;
+}
+
+.plan-order {
+  font-size: 12.5px;
+  color: #15803d;
+  padding: 2px 4px;
+}
+
+.plan-order.bad {
+  color: #b45309;
+}
+
 .plan-term-items {
   display: flex;
   flex-direction: column;
@@ -1516,6 +1548,7 @@ input[type='text'],
   .plan-toolbar,
   .plan-more,
   .plan-build,
+  .plan-done,
   .plan-edit,
   .plan-empty,
   .modal-backdrop {

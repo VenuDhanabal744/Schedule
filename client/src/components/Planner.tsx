@@ -32,6 +32,7 @@ import { matchRequirements } from '../requirements';
 import type { GroupProgress } from '../requirements';
 import { samplePlans } from '../samplePlans';
 import { AutoPlan } from './AutoPlan';
+import { autoPlan } from '../autoplan';
 
 type Drag = { kind: 'item'; id: string; label: string } | { kind: 'new'; code: string; label: string };
 
@@ -242,6 +243,8 @@ function TermColumn({
   cumulative,
   flag,
   build,
+  done,
+  onDone,
   children,
 }: {
   term: string;
@@ -249,11 +252,13 @@ function TermColumn({
   cumulative: number;
   flag: string | null;
   build: { onClick: () => void; missing: number } | null;
+  done: boolean | null; // null: nothing to mark (prior credit, empty term)
+  onDone: (done: boolean) => void;
   children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: term });
   return (
-    <section ref={setNodeRef} className={`plan-term${isOver ? ' over' : ''}${term === PRIOR ? ' prior' : ''}`}>
+    <section ref={setNodeRef} className={`plan-term${isOver ? ' over' : ''}${term === PRIOR ? ' prior' : ''}${done ? ' done' : ''}`}>
       <header className="plan-term-head">
         <h3>{term}</h3>
         <span className={`plan-term-credits${flag ? ' flagged' : ''}`} title={flag ?? undefined}>
@@ -262,6 +267,20 @@ function TermColumn({
         <span className="plan-term-total" title="Cumulative credits through this term">
           Σ {cumulative}
         </span>
+        {done !== null && (
+          <button
+            className="plan-done"
+            aria-pressed={done}
+            onClick={() => onDone(!done)}
+            title={
+              done
+                ? 'Reopen this semester (its courses go back to planned)'
+                : 'Mark every course here completed. Auto-plan then leaves this semester alone and re-plans the later ones.'
+            }
+          >
+            {done ? '✓ Done' : 'Mark done'}
+          </button>
+        )}
       </header>
       {flag && <div className="plan-warning credits">⚠ {flag}</div>}
       <div className="plan-term-items">{children}</div>
@@ -407,6 +426,27 @@ export function Planner({
       const without = setTermItems(p, from, p.terms[from].filter((it) => it.id !== id));
       return setTermItems(without, to, [...(without.terms[to] ?? []), item]);
     });
+  const setTermDone = (term: string, done: boolean) =>
+    setPlan((p) => {
+      const next = setTermItems(
+        p,
+        term,
+        p.terms[term].map((it): PlanItem => ({ ...it, auto: undefined, status: done ? 'completed' : 'planned' }))
+      );
+      // a finished semester is fixed: lay the rest of the auto-plan out around it
+      const template = sample && loaded[sample.templateId];
+      return done && sample && p.autoPlan
+        ? autoPlan({
+            plan: next,
+            sample,
+            ...p.autoPlan,
+            maxCredits: p.maxCredits,
+            index,
+            imported,
+            template: typeof template === 'object' ? template : undefined,
+          }).plan
+        : next;
+    });
   const removeItem = (term: string, id: string) =>
     setPlan((p) => setTermItems(p, term, p.terms[term].filter((it) => it.id !== id)));
   const assignItem = (templateId: string, itemId: string, groupId: string) =>
@@ -480,6 +520,13 @@ export function Planner({
     const it = Object.values(plan.terms).flat().find((x) => x.id === id);
     return it?.code ?? it?.title ?? '';
   };
+  // courses placed before a prerequisite or apart from a corequisite; null with nothing to check
+  const allItems = Object.values(plan.terms).flat();
+  const outOfOrder = allItems.some((it) => it.code)
+    ? allItems
+        .filter((it) => warnings.get(it.id)?.some((w) => w.kind === 'prereq'))
+        .map((it) => it.code ?? it.title)
+    : null;
   const totalCredits = Object.values(plan.terms).reduce((n, its) => n + termCredits(its), 0);
   const doneCredits = Object.values(plan.terms)
     .flat()
@@ -772,6 +819,14 @@ export function Planner({
             </div>
           </div>
 
+          {outOfOrder && (
+            <div className={`plan-order${outOfOrder.length ? ' bad' : ''}`}>
+              {outOfOrder.length
+                ? `⚠ Order check: ${outOfOrder.length} course${outOfOrder.length === 1 ? '' : 's'} placed before something ${outOfOrder.length === 1 ? 'it needs' : 'they need'} — ${outOfOrder.join(', ')}. See the ⚠ on each card.`
+                : '✓ Order check: every listed prerequisite and corequisite is in an earlier (or the same) term.'}
+            </div>
+          )}
+
           <div className="plan-print-title">
             4-Year Plan — {totalCredits} credits planned ({doneCredits} completed)
           </div>
@@ -783,8 +838,12 @@ export function Planner({
               cumulative += credits;
               const season = termSeason(term);
               const regular = season === 'Fall' || season === 'Spring';
-              const flag = !regular
-                ? null
+              const termDone =
+                term === PRIOR || !termItems.length ? null : termItems.every((it) => it.status === 'completed');
+              // a finished semester is history: no load warning
+              const flag =
+                !regular || termDone
+                  ? null
                 : credits > plan.maxCredits
                   ? `Over ${plan.maxCredits} credits`
                   : termItems.length && credits < plan.minCredits
@@ -800,6 +859,8 @@ export function Planner({
                   credits={credits}
                   cumulative={cumulative}
                   flag={flag}
+                  done={termDone}
+                  onDone={(done) => setTermDone(term, done)}
                   build={
                     cat && codes.length
                       ? { onClick: () => onBuildSchedule(cat, offered), missing: codes.length - offered.length }
