@@ -89,6 +89,48 @@ describe('autoPlan', () => {
     expect(Object.keys(twice.assign['jhu-bme-bs'])).toHaveLength(Object.keys(once.assign['jhu-bme-bs']).length);
   });
 
+  it('leaves out courses the student is already past', () => {
+    const index = indexOf(
+      course('AS.030.101'),
+      course('AS.030.102', {
+        prereqs: [{ text: 'Antirequisite', expr: 'AS.030.103[C]', negative: true }, { text: '', expr: 'AS.030.101[C]' }],
+      }),
+      course('AS.030.105', { prereqs: [{ text: 'Antirequisite', expr: 'AS.030.103[C]', negative: true }] }),
+      course('AS.030.106', { prereqs: [{ text: 'Antirequisite', expr: 'AS.030.103[C]', negative: true }] }),
+      course('AS.030.205', { prereqs: [{ text: '', expr: 'AS.030.102[C]^OR^AS.030.103[C]' }] }),
+      course('AS.030.103')
+    );
+    const item = (id: string, code: string): PlanItem => ({ id, code, title: code, credits: 4, status: 'planned' });
+    const start: Plan = {
+      ...defaultPlan(),
+      terms: { 'Prior credit': [item('ap', 'AS.030.103')], 'Fall 2026': [item('orgo', 'AS.030.205')] },
+    };
+    const { plan, skipped } = run({ plan: start, index, premed: true });
+    // 105/106/102 are barred after 103; 101 only leads to courses already taken
+    expect(skipped.sort()).toEqual(['AS.030.101', 'AS.030.102', 'AS.030.105', 'AS.030.106']);
+    const all = Object.values(plan.terms).flat().map((it) => it.code);
+    expect(all).not.toContain('AS.030.101');
+    expect(all).toContain('AS.030.206');
+    // a course planned for later does not make its prerequisites "past"
+    const later: Plan = { ...defaultPlan(), terms: { 'Fall 2029': [item('orgo', 'AS.030.205')] } };
+    expect(run({ plan: later, index }).skipped).toEqual([]);
+  });
+
+  it('moves later courses up when prior credit empties the early terms', () => {
+    const prior: PlanItem[] = [...sample.standard[0], ...sample.standard[1]].map((e, i) => ({
+      id: `p${i}`,
+      code: e.codes![0],
+      title: 'AP',
+      credits: e.credits,
+      status: 'completed',
+    }));
+    const { plan, unplaced } = run({ plan: { ...defaultPlan(), terms: { 'Prior credit': prior } }, semesterCount: 7 });
+    expect(unplaced).toEqual([]);
+    // every term but the last is a full load, and none is far above the even share (13.4)
+    expect(Math.min(...credits(plan, 7).slice(0, -1))).toBeGreaterThanOrEqual(12);
+    expect(Math.max(...credits(plan, 7))).toBeLessThanOrEqual(15);
+  });
+
   it('waits for prerequisites and for the season a course runs in', () => {
     const index = indexOf(
       course('AS.030.101', { terms: ['Spring 2027'] }), // spring only
