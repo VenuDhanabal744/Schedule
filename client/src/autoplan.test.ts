@@ -1,0 +1,125 @@
+import { describe, expect, it } from 'vitest';
+import type { IndexCourse } from './types';
+import { autoPlan, rankFocusAreas, semesters } from './autoplan';
+import { defaultPlan, termCredits } from './plan';
+import type { Plan, PlanItem } from './plan';
+import { samplePlans } from './samplePlans';
+
+const sample = samplePlans.jhu;
+const TERMS = ['Fall 2026', 'Spring 2027'];
+const course = (code: string, extra: Partial<IndexCourse> = {}): IndexCourse => ({
+  code,
+  title: code,
+  department: '',
+  credits: '3',
+  level: '',
+  areas: '',
+  writingIntensive: false,
+  terms: TERMS,
+  ...extra,
+});
+const indexOf = (...courses: IndexCourse[]) => new Map(courses.map((c) => [c.code, c]));
+const run = (extra: Partial<Parameters<typeof autoPlan>[0]> = {}) =>
+  autoPlan({
+    plan: defaultPlan(),
+    sample,
+    premed: false,
+    semesterCount: 8,
+    maxCredits: 18,
+    index: new Map(),
+    imported: TERMS,
+    ...extra,
+  });
+const credits = (plan: Plan, n = 8) => semesters(plan, n).map((t) => termCredits(plan.terms[t]));
+const codes = (plan: Plan, term: string) => (plan.terms[term] ?? []).map((it) => it.code ?? it.title);
+
+describe('semesters', () => {
+  it('alternates Fall and Spring from the first term', () => {
+    expect(semesters({ firstSeason: 'Fall', firstYear: 2026 }, 3)).toEqual(['Fall 2026', 'Spring 2027', 'Fall 2027']);
+    expect(semesters({ firstSeason: 'Spring', firstYear: 2027 }, 2)).toEqual(['Spring 2027', 'Fall 2027']);
+  });
+});
+
+describe('autoPlan', () => {
+  it('reproduces the catalog sample when it fits', () => {
+    const { plan, unplaced } = run();
+    expect(unplaced).toEqual([]);
+    expect(credits(plan)).toEqual([17, 18, 15, 15, 17, 16, 16, 15]);
+    expect(codes(plan, 'Fall 2026')).toEqual(sample.standard[0].map((e) => e.codes![0]));
+    expect(plan.templates).toEqual(['jhu-bme-bs']);
+  });
+
+  it('uses the pre-med sample and checklist when asked', () => {
+    const { plan } = run({ premed: true });
+    expect(credits(plan).reduce((a, b) => a + b)).toBe(130);
+    expect(codes(plan, 'Fall 2027')).toContain('AS.030.205');
+    expect(plan.templates).toEqual(['jhu-bme-bs', 'jhu-premed']);
+  });
+
+  it('never exceeds the credit cap and reports what does not fit', () => {
+    const tight = run({ maxCredits: 15 });
+    expect(Math.max(...credits(tight.plan))).toBeLessThanOrEqual(15);
+    expect(tight.unplaced.length).toBeGreaterThan(0);
+    const longer = run({ maxCredits: 15, semesterCount: 10 });
+    expect(Math.max(...credits(longer.plan, 10))).toBeLessThanOrEqual(15);
+    expect(longer.unplaced).toEqual([]);
+    expect(longer.plan.numTerms).toBe(10);
+  });
+
+  it('squeezes into fewer semesters when graduating early', () => {
+    const { plan, unplaced } = run({ semesterCount: 6, maxCredits: 22 });
+    expect(unplaced).toEqual([]);
+    expect(credits(plan, 6).reduce((a, b) => a + b)).toBe(129);
+  });
+
+  it('keeps the student’s courses, skips what they cover and replaces an earlier run', () => {
+    const mine: PlanItem = { id: 'mine', code: 'AS.030.101', title: 'Chem', credits: 3, status: 'in-progress' };
+    const ap: PlanItem = { id: 'ap', title: 'AP Calculus', credits: 8, status: 'completed', countsAs: ['AS.110.108', 'AS.110.109'] };
+    const start: Plan = { ...defaultPlan(), terms: { 'Prior credit': [ap], 'Fall 2026': [mine] } };
+    const once = run({ plan: start }).plan;
+    const twice = run({ plan: once }).plan;
+    for (const plan of [once, twice]) {
+      // Fall 2026 is underway, so nothing is added to it
+      expect(plan.terms['Fall 2026']).toEqual([mine]);
+      const all = Object.values(plan.terms).flat();
+      expect(all.filter((it) => it.code === 'AS.030.101')).toHaveLength(1);
+      expect(all.some((it) => it.code === 'AS.110.108' || it.code === 'AS.110.109')).toBe(false);
+      expect(all.filter((it) => it.title === 'Focus Area Course 1')).toHaveLength(1);
+    }
+    expect(Object.keys(twice.assign['jhu-bme-bs'])).toHaveLength(Object.keys(once.assign['jhu-bme-bs']).length);
+  });
+
+  it('waits for prerequisites and for the season a course runs in', () => {
+    const index = indexOf(
+      course('AS.030.101', { terms: ['Spring 2027'] }), // spring only
+      course('AS.030.105', { prereqs: [{ text: 'may be taken concurrently', expr: 'AS.030.101[C]' }] }),
+      course('AS.030.102', { prereqs: [{ text: '', expr: 'AS.030.101[C]' }] })
+    );
+    const { plan } = run({ index });
+    expect(codes(plan, 'Fall 2026')).not.toContain('AS.030.101');
+    expect(codes(plan, 'Spring 2027')).toEqual(expect.arrayContaining(['AS.030.101', 'AS.030.105']));
+    expect(codes(plan, 'Fall 2027')).toContain('AS.030.102');
+  });
+
+  it('names focus slots and counts slots toward their requirement group', () => {
+    const { plan } = run({ focusName: 'Immunoengineering' });
+    const all = Object.values(plan.terms).flat();
+    const focus = all.filter((it) => it.title.endsWith('(Immunoengineering)'));
+    expect(focus).toHaveLength(6);
+    expect(plan.assign['jhu-bme-bs'][focus[0].id]).toBe('focus-area');
+    expect(all.find((it) => it.title === 'Course tagged FA3')?.tags).toEqual(['FA3']);
+  });
+});
+
+describe('rankFocusAreas', () => {
+  it('orders focus areas by their share of Natural Sciences courses', () => {
+    const index = indexOf(
+      course('A', { posTags: ['BME-IMD'], areas: 'Engineering (E)' }),
+      course('B', { posTags: ['BME-IMD', 'BME-IMMU'], areas: 'Engineering (E)^Natural Sciences (N)' }),
+      course('C', { posTags: ['BME-IMMU'], areas: 'Natural Sciences (N)' })
+    );
+    const ranked = rankFocusAreas(sample.focusAreas, index);
+    expect(ranked[0]).toMatchObject({ tag: 'BME-IMMU', total: 2, science: 2 });
+    expect(ranked[1]).toMatchObject({ tag: 'BME-IMD', total: 2, science: 1 });
+  });
+});

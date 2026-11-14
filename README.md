@@ -141,6 +141,13 @@ Pre-Professional Advising pages named in their `source`; they are unofficial, an
   Requirements tab to track it with a progress bar per group. "Build this semester's schedule" loads a planned term into the scheduler, which
   lists planned courses you haven't added yet. Saved in the browser per school; export or
   import as JSON, and Print / PDF gives a one-page view.
+- **Auto-plan** (JHU Biomedical Engineering) — pick a graduation term and a credit cap, and
+  the planner lays out the e-catalogue's sample program in its order, respecting
+  prerequisites and the season each course runs in. Keeps the courses you entered and
+  leaves semesters with completed or in-progress courses alone. A pre-med box switches to
+  the catalogue's pre-med sample and turns on the pre-med checklist; focus areas are ranked
+  by their share of Natural Sciences courses. The sample lives in
+  `client/src/samplePlans.ts`.
 - **Course details** — the ⓘ button on any course (search results, My Courses, calendar
   blocks) or a planner card opens its description, prerequisites, offering pattern,
   sections in every imported term, and ratings.
