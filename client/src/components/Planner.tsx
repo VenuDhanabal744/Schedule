@@ -15,6 +15,7 @@ import { fetchPlannerData, fetchRequirementTemplate } from '../api';
 import {
   PRIOR,
   catalogTerm,
+  itemCodes,
   loadPlan,
   newId,
   offeringLabel,
@@ -32,7 +33,8 @@ import { matchRequirements } from '../requirements';
 import type { GroupProgress } from '../requirements';
 import { samplePlans, sampleFor } from '../samplePlans';
 import { AutoPlan } from './AutoPlan';
-import { autoPlan } from '../autoplan';
+import { autoPlan, slotEntry, slotMatch } from '../autoplan';
+import { SlotOptions } from './SlotOptions';
 
 type Drag = { kind: 'item'; id: string; label: string } | { kind: 'new'; code: string; label: string };
 
@@ -101,6 +103,7 @@ function PlanCard({
   onRemove,
   onAssign,
   onInfo,
+  onOptions,
 }: {
   item: PlanItem;
   term: string;
@@ -115,6 +118,7 @@ function PlanCard({
   onRemove: () => void;
   onAssign: (templateId: string, groupId: string) => void;
   onInfo: () => void;
+  onOptions?: () => void; // a sample-program placeholder: list what can fill it
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: item.id,
@@ -124,9 +128,13 @@ function PlanCard({
     <div className={`plan-card st-${item.status}${isDragging ? ' dragging' : ''}${warnings.length ? ' warn' : ''}`}>
       <div ref={setNodeRef} {...listeners} {...attributes} className="plan-card-head">
         <span className="plan-status" title={STATUS_LABEL[item.status]} />
-        <button className="plan-card-title" onClick={item.code ? onInfo : onToggle} title={item.code ? 'Course details' : 'Edit'}>
+        <button
+          className="plan-card-title"
+          onClick={item.code ? onInfo : onOptions ?? onToggle}
+          title={item.code ? 'Course details' : onOptions ? 'See the courses that fit' : 'Edit'}
+        >
           <strong>{item.code ?? item.title}</strong>
-          {item.code && <span>{item.title}</span>}
+          {item.code ? <span>{item.title}</span> : onOptions && <span>Choose a course ›</span>}
         </button>
         <span className="cc-credits">{item.credits} cr</span>
         <button className="plan-more" aria-label={`Edit ${item.code ?? item.title}`} aria-expanded={open} onClick={onToggle}>
@@ -372,6 +380,7 @@ export function Planner({
   const [loaded, setLoaded] = useState<Record<string, ReqTemplate | 'loading' | 'failed'>>({});
   const [reqQuery, setReqQuery] = useState('');
   const [autoOpen, setAutoOpen] = useState(false);
+  const [slotCard, setSlotCard] = useState<{ term: string; id: string } | null>(null);
 
   useEffect(() => {
     fetchPlannerData(school).then(setData, (e) => setError(e.message));
@@ -399,12 +408,37 @@ export function Planner({
   const seq = useMemo(() => termSequence(plan), [plan]);
   const warnings = useMemo(() => planWarnings(plan, index, imported), [plan, index, imported]);
   const targetTerm = seq.includes(target) ? target : seq[1] ?? PRIOR;
+  const taken = useMemo(() => new Set(Object.values(plan.terms).flat().flatMap(itemCodes)), [plan.terms]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (q.length < 2 || !data) return [];
     return data.courses.filter((c) => c.code.toLowerCase().includes(q) || c.title.toLowerCase().includes(q));
   }, [data, query]);
+
+  // the program a plan was last auto-planned for
+  const planned = (p: Plan) => {
+    const id = p.autoPlan && (p.autoPlan.templateId ?? 'jhu-bme-bs'); // made before majors were selectable: BME
+    const t = id ? loaded[id] : undefined;
+    const template = typeof t === 'object' ? t : undefined;
+    return { template, sample: template ? sampleFor(template) : id ? samplePlans[id] : undefined };
+  };
+  // the sample slot a placeholder card stands for, and what can fill it
+  const slotOf = (it: PlanItem) => {
+    const { sample, template } = planned(plan);
+    for (const s of new Set([sample, ...Object.values(samplePlans)])) {
+      const entry = s && slotEntry(it, s);
+      if (!entry) continue;
+      const t = s === sample ? template : loaded[s.templateId];
+      return {
+        label: entry.label!,
+        source: s.source,
+        match: slotMatch(entry, s, typeof t === 'object' ? t : undefined, plan.autoPlan?.focusName),
+      };
+    }
+  };
+  const slotItem = slotCard && plan.terms[slotCard.term]?.find((it) => it.id === slotCard.id);
+  const slotOpen = slotItem ? slotOf(slotItem) : undefined;
 
   const setTermItems = (p: Plan, term: string, items: PlanItem[]): Plan => ({
     ...p,
@@ -422,7 +456,8 @@ export function Planner({
     setPlan((p) => {
       const from = Object.keys(p.terms).find((t) => p.terms[t].some((it) => it.id === id));
       if (!from || from === to) return p;
-      const item = p.terms[from].find((it) => it.id === id)!;
+      // a course the student moves is theirs: the auto-planner leaves it there
+      const item = { ...p.terms[from].find((it) => it.id === id)!, auto: undefined };
       const without = setTermItems(p, from, p.terms[from].filter((it) => it.id !== id));
       return setTermItems(without, to, [...(without.terms[to] ?? []), item]);
     });
@@ -431,24 +466,37 @@ export function Planner({
       const next = setTermItems(
         p,
         term,
-        p.terms[term].map((it): PlanItem => ({ ...it, auto: undefined, status: done ? 'completed' : 'planned' }))
+        p.terms[term].map((it): PlanItem => ({ ...it, status: done ? 'completed' : 'planned' }))
       );
       // a finished semester is fixed: lay the rest of the auto-plan out around it
-      const id = p.autoPlan && (p.autoPlan.templateId ?? 'jhu-bme-bs'); // made before majors were selectable: BME
-      const template = id ? loaded[id] : undefined;
-      const sample = typeof template === 'object' ? sampleFor(template) : id ? samplePlans[id] : undefined;
+      const { sample, template } = planned(p);
       return done && sample && p.autoPlan
         ? autoPlan({
             plan: next,
             sample,
             ...p.autoPlan,
+            semesterCount: p.numTerms,
             maxCredits: p.maxCredits,
             index,
             imported,
-            template: typeof template === 'object' ? template : undefined,
+            template,
           }).plan
         : next;
     });
+  // a placeholder becomes the course chosen for it: the student's own from here on
+  const pickCourse = (term: string, id: string, code: string) => {
+    const c = index.get(code);
+    if (!c) return;
+    setPlan((p) =>
+      setTermItems(
+        p,
+        term,
+        p.terms[term].map((it) =>
+          it.id === id ? { id, code, title: c.title, credits: parseFloat(c.credits) || 0, status: it.status } : it
+        )
+      )
+    );
+  };
   const removeItem = (term: string, id: string) =>
     setPlan((p) => setTermItems(p, term, p.terms[term].filter((it) => it.id !== id)));
   const assignItem = (templateId: string, itemId: string, groupId: string) =>
@@ -885,6 +933,7 @@ export function Planner({
                       onRemove={() => removeItem(term, it.id)}
                       onAssign={(templateId, groupId) => assignItem(templateId, it.id, groupId)}
                       onInfo={() => it.code && onInfo(it.code)}
+                      onOptions={slotOf(it) && (() => setSlotCard({ term, id: it.id }))}
                     />
                   ))}
                   {!termItems.length && <div className="plan-empty">Drop courses here</div>}
@@ -895,6 +944,20 @@ export function Planner({
         </div>
       </div>
       <DragOverlay dropAnimation={null}>{drag && <div className="drag-overlay c0">{drag.label}</div>}</DragOverlay>
+      {slotOpen && (
+        <SlotOptions
+          {...slotOpen}
+          index={index}
+          imported={imported}
+          taken={taken}
+          onPick={(code) => {
+            pickCourse(slotCard!.term, slotCard!.id, code);
+            setSlotCard(null);
+          }}
+          onInfo={onInfo}
+          onClose={() => setSlotCard(null)}
+        />
+      )}
       {autoOpen && programs.length > 0 && (
         <AutoPlan
           school={school}

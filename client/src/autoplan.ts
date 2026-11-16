@@ -1,8 +1,9 @@
-import type { IndexCourse, ReqTemplate } from './types';
+import type { IndexCourse, ReqMatch, ReqTemplate } from './types';
 import { itemCodes, newId, offeringPattern, reqItems, termCredits, termOrder, termSeason } from './plan';
 import type { Plan, PlanItem } from './plan';
 import { courseReqs, credited, reqCodes, unmet } from './prereqs';
-import { areaTags, matchRequirements, slotOptions } from './requirements';
+import { areaTags, itemMatches, matchRequirements, slotOptions } from './requirements';
+import { samplePlans } from './samplePlans';
 import type { SampleEntry, SamplePlan } from './samplePlans';
 
 // The first `n` Fall/Spring terms of a plan.
@@ -45,6 +46,70 @@ export function rankFocusAreas(areas: SamplePlan['focusAreas'], index: Map<strin
     .sort((a, b) => b.science / (b.total || 1) - a.science / (a.total || 1) || b.science - a.science);
 }
 
+// The sample slot a placeholder card stands for. Placeholders carry the slot's
+// label (`fills`); ones placed before that only have it as their title, with
+// the focus area appended ("Focus Area Course 1 (Neuroengineering)").
+export function slotEntry(it: PlanItem, sample: SamplePlan): SampleEntry | undefined {
+  if (it.code) return undefined;
+  const slots = [...sample.standard, ...(sample.premed ?? [])].flat().filter((e) => e.slot);
+  const find = (label: string) => slots.find((e) => e.label === label);
+  return find(it.fills ?? it.title) ?? find(it.title.replace(/ \([^)]*\)$/, ''));
+}
+
+// What can fill a slot, as a requirement match. null: anything can (a free
+// elective), or the catalog's label doesn't say.
+export function slotMatch(
+  e: SampleEntry,
+  sample: SamplePlan,
+  template?: ReqTemplate,
+  focusName?: string
+): ReqMatch | null {
+  const label = e.label ?? '';
+  const focus = e.slot === 'focus' && sample.focusAreas.find((f) => f.name === focusName);
+  if (focus) return { posTags: [focus.tag] };
+  if (e.slot === 'fa3' || e.slot === 'fa4' || e.slot === 'fa3-fa4') return { areas: e.slot.toUpperCase().split('-') };
+  const group = template?.groups.find((g) => g.id === sample.slotGroups[e.slot!]);
+  if (group?.match) return group.match;
+  if (group?.courses) {
+    // "Design Sequence 2": the second course of each two-semester option
+    const nth = +(label.match(/ (\d)$/)?.[1] ?? 0) - 1;
+    return { codes: group.courses.flatMap(slotOptions).flatMap((o) => (o[nth] ? [o[nth]] : o)) };
+  }
+  if (e.slot === 'free') return null;
+  const patterns = /\bFYS\b|first[- ]year seminar/i.test(label) ? ['AS.001.*', 'EN.501.*'] : [];
+  // "EN.601.3xx/4xx", "AS.100.3xx - AS.100.4xx", "AS.061.XXX"
+  for (const [, dept, lo, hi] of label.matchAll(
+    /([A-Z]{2}\.\d{3})\.(?:(\d)xx(?:\s*[-–/]\s*(?:[A-Z]{2}\.\d{3}\.)?(\d)xx)?|xxx)/gi
+  )) {
+    if (!lo) patterns.push(`${dept}.*`);
+    else for (let level = +lo; level <= +(hi ?? lo); level++) patterns.push(`${dept}.${level}??`);
+  }
+  const areas = [...label.matchAll(/\btag (FA\d(?:\.\d)?(?:eP)?)/g)].map((m) => m[1]);
+  const posTags = label.match(/\b[A-Z]{3,5}-[A-Z]{2,7}\b/g) ?? []; // "(BEHB-BIOBEH)", "POS-Tag MSCH-HUM"
+  return patterns.length || areas.length || posTags.length ? { patterns, areas, posTags } : null;
+}
+
+// Catalog courses a match accepts.
+export const matchingCourses = (m: ReqMatch, index: Map<string, IndexCourse>): IndexCourse[] =>
+  [...index.values()].filter((c) =>
+    itemMatches(
+      {
+        id: c.code,
+        codes: [c.code],
+        credits: parseFloat(c.credits) || 0,
+        tags: areaTags(c.areas),
+        posTags: c.posTags ?? [],
+        writingIntensive: c.writingIntensive,
+        completed: false,
+      },
+      m
+    )
+  );
+
+// Placed by the auto-planner and not yet under way: the next run replaces it.
+// A course the student adds or moves is theirs and is never touched.
+export const replaceable = (it: PlanItem) => !!it.auto && it.status === 'planned';
+
 export type AutoPlanOptions = {
   plan: Plan;
   sample: SamplePlan;
@@ -58,8 +123,8 @@ export type AutoPlanOptions = {
 };
 
 // Lays the catalog's sample program out over the plan's semesters. Keeps every
-// course the student entered, replaces what an earlier run placed, and never
-// adds to a semester that already holds completed or in-progress courses.
+// course the student entered or moved, replaces what an earlier run placed, and
+// never adds to a semester that already holds completed or in-progress courses.
 export function autoPlan(o: AutoPlanOptions): {
   plan: Plan;
   unplaced: SampleEntry[];
@@ -67,14 +132,21 @@ export function autoPlan(o: AutoPlanOptions): {
 } {
   const { plan, sample, index, maxCredits } = o;
   const grid = (o.premed && sample.premed) || sample.standard;
-  const kept = Object.fromEntries(Object.entries(plan.terms).map(([t, items]) => [t, items.filter((it) => !it.auto)]));
+  // a planned placeholder without `auto` or `fills` is left over from an
+  // earlier version (any program's): the planner's own, not the student's
+  const stray = (it: PlanItem) =>
+    it.status === 'planned' && !it.fills && [sample, ...Object.values(samplePlans)].some((s) => slotEntry(it, s));
+  const kept = Object.fromEntries(
+    Object.entries(plan.terms).map(([t, items]) => [t, items.filter((it) => !replaceable(it) && !stray(it))])
+  );
   const base: Plan = { ...plan, terms: kept, numTerms: o.semesterCount };
   const sems = semesters(plan, o.semesterCount);
   const started = sems.map((t) => !!kept[t]?.some((it) => it.status !== 'planned')).lastIndexOf(true) + 1;
   const open = sems.slice(started);
 
   // ---- what the student's own courses already cover ----
-  const progress = o.template ? matchRequirements(o.template, reqItems(base, index), plan.assign[o.template.id]) : [];
+  const own = reqItems(base, index);
+  const progress = o.template ? matchRequirements(o.template, own, plan.assign[o.template.id]) : [];
   const covered = new Set(Object.values(kept).flatMap((items) => items.flatMap(itemCodes)));
   const spare = new Map<string, { left: number; credits: boolean }>(); // per group: filled amount not yet used to skip a slot
   for (const p of progress) {
@@ -111,9 +183,24 @@ export function autoPlan(o: AutoPlanOptions): {
     (due.get(code) ?? Infinity) <= horizon ||
     !!index.get(code)?.prereqs?.some((r) => r.negative && exprCodes(r.expr).some((c) => mine.has(c)));
 
+  // slots outside the requirement groups: each is filled by a placeholder the
+  // student moved, or by one of their courses that fits it and isn't one of
+  // the sample's own courses ("FYS or Design Cornerstone" by EN.501.124)
+  const named = new Set(grid.flat().flatMap((e) => e.codes ?? []));
+  const placeholders = Object.values(kept).flat();
+  const spent = new Set<string>();
   const filled = (e: SampleEntry) => {
     if (e.codes) return e.codes.some((code) => covered.has(code));
-    const s = spare.get(sample.slotGroups[e.slot!] ?? '');
+    const group = sample.slotGroups[e.slot!];
+    if (!group) {
+      const match = slotMatch(e, sample, o.template, o.focusName);
+      const by =
+        placeholders.find((it) => it.fills === e.label && !spent.has(it.id)) ??
+        (match && own.find((it) => !spent.has(it.id) && !it.codes.some((c) => named.has(c)) && itemMatches(it, match)));
+      if (by) spent.add(by.id);
+      return !!by;
+    }
+    const s = spare.get(group);
     const cost = s?.credits ? e.credits : 1;
     if (!s || s.left < cost) return false;
     s.left -= cost;
@@ -165,7 +252,13 @@ export function autoPlan(o: AutoPlanOptions): {
   });
   level.forEach((l, i) => (level[i] = Math.min(l, even)));
 
+  // A design sequence runs Fall then Spring. It is placed first, while those
+  // terms still have room, and early enough that the rest of it fits.
+  const design = (t: { e: SampleEntry }) => t.e.slot === 'design';
+  todo.sort((a, b) => +design(b) - +design(a));
+  let designs = todo.filter(design).length;
   for (const { e, s, code } of todo) {
+    const after = e.slot === 'design' ? --designs : 0; // sequence courses that must follow this one
     const course = code ? index.get(code) : undefined;
     // the one season a course has been seen in, if only one
     const only = (c: IndexCourse | undefined) => {
@@ -195,7 +288,8 @@ export function autoPlan(o: AutoPlanOptions): {
       },
       (i: number) =>
         [season, ...partners.map((t) => only(index.get(t.code!)))].every((x) => !x || termSeason(open[i]) === x),
-      (i: number) => load[i] + room <= maxCredits && (e.slot !== 'design' || i > lastDesign),
+      (i: number) =>
+        load[i] + room <= maxCredits && (e.slot !== 'design' || (i > lastDesign && i + after < open.length)),
     ];
     // major electives stay behind the courses the catalog lists before them;
     // general ones (FA3/FA4, free) can go anywhere
@@ -207,8 +301,14 @@ export function autoPlan(o: AutoPlanOptions): {
       (i: number) => load[i] + room <= Math.ceil(even) + 1
     );
     const gap = load.findIndex((l, i) => l < level[i]);
-    const want = gap < 0 ? slotOf(s) : Math.min(slotOf(s), gap);
-    const order = [...open.keys()].slice(want).concat([...open.keys()].slice(0, want).reverse());
+    const keys = [...open.keys()];
+    const want =
+      e.slot === 'design' ? Math.min(slotOf(s), open.length - 1 - after) : gap < 0 ? slotOf(s) : Math.min(slotOf(s), gap);
+    // from the wanted term on, then back; a design course looks earlier first
+    const order =
+      e.slot === 'design'
+        ? keys.slice(0, want + 1).reverse().concat(keys.slice(want + 1))
+        : keys.slice(want).concat(keys.slice(0, want).reverse());
     // all checks, then without the two pace rules, prerequisites, and the season; the
     // planner's own warnings flag whatever had to give
     let at = -1;
@@ -226,6 +326,7 @@ export function autoPlan(o: AutoPlanOptions): {
       credits: e.credits,
       status: 'planned',
       auto: true,
+      ...(e.slot ? { fills: e.label } : {}),
       ...(e.slot === 'fa3' || e.slot === 'fa4' ? { tags: [e.slot.toUpperCase()] } : {}),
     };
     // slots without a tag of their own are counted by assignment

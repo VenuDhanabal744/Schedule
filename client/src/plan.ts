@@ -16,7 +16,8 @@ export type PlanItem = {
   writingIntensive?: boolean;
   countsAs?: string[]; // course codes this stands in for (AP/transfer credit)
   repeatable?: boolean;
-  auto?: boolean; // placed by the auto-planner; replaced when it runs again
+  auto?: boolean; // placed by the auto-planner; replaced when it runs again while still planned
+  fills?: string; // a placeholder for this slot of the catalog's sample program (its label)
 };
 
 export type Plan = {

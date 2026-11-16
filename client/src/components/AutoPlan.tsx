@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { IndexCourse, ReqSummary, ReqTemplate } from '../types';
 import { fetchRequirementTemplate } from '../api';
-import { autoPlan, rankFocusAreas, semesters } from '../autoplan';
-import { planWarnings, termCredits } from '../plan';
+import { autoPlan, rankFocusAreas, replaceable, semesters } from '../autoplan';
+import { planWarnings, termCredits, termOrder } from '../plan';
 import type { Plan } from '../plan';
 import { samplePlans, sampleFor } from '../samplePlans';
 
@@ -27,7 +27,8 @@ export function AutoPlan({
 }) {
   const options = semesters(plan, 12);
   const last = plan.autoPlan; // settings of the previous run
-  const [count, setCount] = useState(last?.semesterCount ?? Math.min(12, Math.max(8, plan.numTerms)));
+  // the planner's own Semesters setting: the last run set it, unless you changed it since
+  const [count, setCount] = useState(Math.min(12, Math.max(4, plan.numTerms)));
   const [max, setMax] = useState(plan.maxCredits || 18);
   const [premed, setPremed] = useState(last?.premed ?? false);
   const [programId, setProgramId] = useState(
@@ -36,9 +37,9 @@ export function AutoPlan({
       plan.templates.find((id) => programs.some((p) => p.id === id)) ??
       programs[0].id
   );
-  const [focus, setFocus] = useState<string | null>(
-    samplePlans[programId]?.focusAreas.find((f) => f.name === last?.focusName)?.tag ?? null // null: not chosen by hand
-  );
+  // the focus area of the last run, if this major has it; null: not chosen by hand
+  const lastFocus = (id: string) => samplePlans[id]?.focusAreas.find((f) => f.name === last?.focusName)?.tag ?? null;
+  const [focus, setFocus] = useState(() => lastFocus(programId));
   const [template, setTemplate] = useState<ReqTemplate | 'loading' | 'failed'>('loading');
   useEffect(() => {
     setTemplate('loading');
@@ -54,7 +55,7 @@ export function AutoPlan({
   const best = ranked[0]?.science ? ranked[0] : undefined;
   // pre-med picks the top-ranked area unless the student chose one
   const chosen = focus ?? (premed ? best?.tag ?? '' : '');
-  const hasAuto = Object.values(plan.terms).some((items) => items.some((it) => it.auto));
+  const hasAuto = Object.values(plan.terms).some((items) => items.some(replaceable));
 
   const generate = () => {
     if (!sample) return;
@@ -71,7 +72,11 @@ export function AutoPlan({
       focusName: ranked.find((r) => r.tag === chosen)?.name,
     });
     onApply(next);
-    const placed = Object.values(next.terms).flat().filter((it) => it.auto);
+    const placed = Object.values(next.terms).flat().filter(replaceable);
+    // the student's own courses past the graduation term: theirs to move
+    const late = Object.entries(next.terms)
+      .filter(([t]) => termOrder(t) > termOrder(options[count - 1]))
+      .flatMap(([t, items]) => items.map((it) => `${it.code ?? it.title} (${t})`));
     const flagged = [...planWarnings(next, index, imported).keys()].filter((id) => placed.some((it) => it.id === id));
     setResult([
       `Added ${placed.length} courses (${termCredits(placed)} credits) through ${options[count - 1]}.`,
@@ -80,6 +85,13 @@ export function AutoPlan({
             `${unplaced.length} did not fit under ${max} credits (${unplaced.reduce((n, e) => n + e.credits, 0)} cr): ${unplaced
               .map((e) => e.codes?.[0] ?? e.label)
               .join(', ')}. Raise the cap or graduate later.`,
+          ]
+        : []),
+      ...(late.length
+        ? [
+            `After ${options[count - 1]} your plan still has ${late.join(', ')}. You placed ${
+              late.length === 1 ? 'it' : 'them'
+            }, so auto-plan left ${late.length === 1 ? 'it' : 'them'} there — move or remove ${late.length === 1 ? 'it' : 'them'} to graduate on time.`,
           ]
         : []),
       ...(skipped.length
@@ -107,7 +119,7 @@ export function AutoPlan({
             value={programId}
             onChange={(e) => {
               setProgramId(e.target.value);
-              setFocus(null);
+              setFocus(lastFocus(e.target.value));
             }}
           >
             {[...programs]
@@ -198,7 +210,9 @@ export function AutoPlan({
                     onApply({
                       ...plan,
                       autoPlan: undefined,
-                      terms: Object.fromEntries(Object.entries(plan.terms).map(([t, items]) => [t, items.filter((it) => !it.auto)])),
+                      terms: Object.fromEntries(
+                        Object.entries(plan.terms).map(([t, items]) => [t, items.filter((it) => !replaceable(it))])
+                      ),
                     });
                     onClose();
                   }}
