@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { IndexCourse } from './types';
-import { autoPlan, rankFocusAreas, semesters } from './autoplan';
+import { autoPlan, matchingCourses, rankFocusAreas, semesters, slotEntry, slotMatch } from './autoplan';
 import { defaultPlan, planWarnings, termCredits } from './plan';
 import type { Plan, PlanItem } from './plan';
 import { samplePlans, sampleFor } from './samplePlans';
@@ -193,6 +193,104 @@ describe('autoPlan', () => {
     expect(focus).toHaveLength(6);
     expect(plan.assign['jhu-bme-bs'][focus[0].id]).toBe('focus-area');
     expect(all.find((it) => it.title === 'Course tagged FA3')?.tags).toEqual(['FA3']);
+  });
+});
+
+describe('what is the student’s and what is the planner’s', () => {
+  const template = {
+    id: 'jhu-chembe',
+    school: 'jhu',
+    name: 'ChemBE',
+    source: 'https://e-catalogue.jhu.edu/chembe/',
+    note: '',
+    groups: [],
+    sample: [
+      [
+        { credits: 3, codes: ['AS.030.101'] },
+        { credits: 3, slot: 'fa3' as const, label: 'Course with EN Foundational Ability tag FA3 (Creative Expression)' },
+        { credits: 2, slot: 'major' as const, label: 'FYS or Design Cornerstone' },
+      ],
+      [{ credits: 3, slot: 'major' as const, label: 'EN.540.3xx/4xx ChemBE Elective' }, { credits: 3, slot: 'free' as const, label: 'Free Elective' }],
+    ],
+  };
+  const generated = sampleFor(template)!;
+  const index = indexOf(
+    course('EN.501.124', { title: 'FYS: Design Cornerstone', credits: '2' }),
+    course('AS.001.100', { title: 'FYS: What is the Common Good?' }),
+    course('AS.220.105', { areas: 'Humanities (H)^Creative Expression (FA3)' }),
+    course('EN.540.301'),
+    course('EN.540.409'),
+    course('EN.540.202')
+  );
+  const item = (id: string, extra: Partial<PlanItem>): PlanItem => ({ id, title: id, credits: 3, status: 'planned', ...extra });
+
+  it('never plans past the graduation term: placeholders left there by an older version are pulled back', () => {
+    // as an earlier version left them: no `auto`, no `fills`
+    const start: Plan = {
+      ...defaultPlan(),
+      terms: {
+        'Spring 2030': [
+          item('f6', { title: 'Focus Area Course 6 (Translational Cell and Tissue Engineering)' }),
+          item('fa', { title: 'Course tagged FA3 or FA4' }),
+        ],
+      },
+    };
+    const { plan, unplaced } = run({ plan: start, premed: true, semesterCount: 7, maxCredits: 21 });
+    expect(unplaced).toEqual([]);
+    // the design sequence moves up a year so its Spring half still fits
+    expect(codes(plan, 'Fall 2028')).toContain('Design Sequence 1');
+    expect(codes(plan, 'Spring 2029')).toContain('Design Sequence 2');
+    expect(plan.terms['Spring 2030']).toEqual([]);
+    expect(plan.numTerms).toBe(7);
+    const all = Object.values(plan.terms).flat();
+    expect(all.filter((it) => it.fills === 'Focus Area Course 6')).toHaveLength(1);
+    expect(all.filter((it) => it.fills === 'Course tagged FA3 or FA4')).toHaveLength(2);
+  });
+
+  it('skips a slot the student’s own course already fills', () => {
+    const start: Plan = {
+      ...defaultPlan(),
+      terms: { 'Fall 2026': [item('fys', { code: 'EN.501.124', credits: 2 }), item('art', { code: 'AS.220.105' })] },
+    };
+    const { plan } = run({ plan: start, sample: generated, index, semesterCount: 2 });
+    const titles = Object.values(plan.terms).flat().map((it) => it.code ?? it.title);
+    expect(titles.sort()).toEqual(['AS.030.101', 'AS.220.105', 'EN.501.124', 'EN.540.3xx/4xx ChemBE Elective', 'Free Elective']);
+    expect(plan.terms['Fall 2026'].slice(0, 2)).toEqual(start.terms['Fall 2026']);
+  });
+
+  it('leaves a moved placeholder and a finished auto-planned course where they are', () => {
+    const once = run({ sample: generated, index, semesterCount: 2 }).plan;
+    const free = once.terms['Spring 2027'].find((it) => it.fills === 'Free Elective')!;
+    // what the planner does on a drag (auto cleared) and on "Mark done" (auto kept)
+    const moved: Plan = {
+      ...once,
+      terms: {
+        'Fall 2026': [...once.terms['Fall 2026'].map((it) => ({ ...it, status: 'completed' as const })), { ...free, auto: undefined }],
+        'Spring 2027': once.terms['Spring 2027'].filter((it) => it !== free),
+      },
+    };
+    const twice = run({ plan: moved, sample: generated, index, semesterCount: 2 }).plan;
+    expect(twice.terms['Fall 2026']).toEqual(moved.terms['Fall 2026']);
+    expect(codes(twice, 'Spring 2027')).toEqual(['EN.540.3xx/4xx ChemBE Elective']);
+  });
+
+  it('lists the courses that can fill a slot', () => {
+    const list = (label: string, slot: 'major' | 'fa3' | 'free' = 'major') => {
+      const m = slotMatch({ credits: 3, slot, label }, generated);
+      return m && matchingCourses(m, index).map((c) => c.code);
+    };
+    expect(list('FYS or Design Cornerstone')).toEqual(['EN.501.124', 'AS.001.100']);
+    expect(list('EN.540.3xx/4xx ChemBE Elective')).toEqual(['EN.540.301', 'EN.540.409']);
+    expect(list('Course tagged FA3', 'fa3')).toEqual(['AS.220.105']);
+    expect(list('Free Elective', 'free')).toBeNull();
+    expect(list('Upper Level Biology Elective')).toBeNull();
+    // the BME template's groups: a focus area's tag, the second half of a design sequence
+    const bme = { ...template, id: 'jhu-bme-bs', groups: [{ id: 'design', name: '', courses: [{ oneOf: [['EN.580.311', 'EN.580.312']] }] }] };
+    expect(slotMatch({ credits: 4, slot: 'design', label: 'Design Sequence 2' }, sample, bme)).toEqual({ codes: ['EN.580.312'] });
+    expect(slotMatch({ credits: 3, slot: 'focus', label: 'Focus Area Course 1' }, sample, bme, 'Neuroengineering')).toEqual({ posTags: ['BME-NE'] });
+    // placeholders from before `fills` are recognised by their title
+    expect(slotEntry(item('x', { title: 'Focus Area Course 1 (Neuroengineering)' }), sample)?.slot).toBe('focus');
+    expect(slotEntry(item('y', { title: 'My own elective' }), sample)).toBeUndefined();
   });
 });
 

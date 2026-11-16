@@ -1801,3 +1801,25 @@ input[type='text'],
   margin-top: 6px;
   text-decoration: underline;
 }
+
+/* ---------- slot options dialog ---------- */
+.slot-modal {
+  width: 520px;
+}
+
+.slot-modal input[type='search'] {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.slot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 46vh;
+  overflow-y: auto;
+}

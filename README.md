@@ -149,6 +149,16 @@ Pre-Professional Advising pages named in their `source`; they are unofficial, an
   focus areas are ranked by their share of Natural Sciences courses). `npm run requirements
   -- jhu` reads each page's first sample grid into the generated template; the hand-typed
   BME sample in `client/src/samplePlans.ts` takes precedence.
+- **What Auto-plan may touch** — only the cards it placed itself and that are still
+  "planned". A course you add, move to another semester, or choose for a placeholder is
+  yours and stays put; so does anything in progress or completed. It never places a course
+  after the graduation term, and tells you if one of your own is still there. A slot one of
+  your courses already fills is skipped ("FYS or Design Cornerstone" when you have
+  EN.501.124).
+- **Placeholder options** — click a placeholder card ("Course tagged FA3 or FA4", "Focus
+  Area Course 2", "EN.601.3xx/4xx") to list the catalog courses that fit it, and choose
+  one to replace the placeholder. Slots the catalog only describes in words ("Upper Level
+  Biology Elective") and free electives have no list.
 - **Order check and Mark done** — the planner checks every course's prerequisites and
   corequisites (a lecture and its lab must share a term) and says so above the grid. A
   course the registrar bars after one you hold counts as taken (AS.030.103 for AS.030.102).
