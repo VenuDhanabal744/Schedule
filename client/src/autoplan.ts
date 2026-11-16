@@ -159,21 +159,37 @@ export function autoPlan(o: AutoPlanOptions): {
     });
   }
   // ---- sample courses the student is already past ----
-  // `due`: the earliest term holding a course that has this one somewhere in
-  // its prerequisite chain. A prerequisite can't follow the course it leads to.
-  const due = new Map<string, number>();
-  const walk = (code: string, order: number) => {
-    for (const r of index.get(code)?.prereqs ?? []) {
-      if (r.negative) continue;
-      for (const c of exprCodes(r.expr)) {
-        if ((due.get(c) ?? Infinity) <= order) continue;
-        due.set(c, order);
-        walk(c, order);
+  // `due`: the earliest term holding a course that this one comes before. A
+  // prerequisite can't follow the course it leads to.
+  const needs = (code: string) =>
+    (index.get(code)?.prereqs ?? []).filter((r) => !r.negative).flatMap((r) => exprCodes(r.expr));
+  // every course named anywhere in a course's prerequisite chain
+  const chains = new Map<string, Set<string>>();
+  const chain = (code: string) => {
+    let all = chains.get(code);
+    if (!all) {
+      chains.set(code, (all = new Set()));
+      for (const queue = needs(code); queue.length; ) {
+        const c = queue.pop()!;
+        if (all.has(c)) continue;
+        all.add(c);
+        queue.push(...needs(c));
       }
     }
+    return all;
   };
-  for (const [t, items] of Object.entries(kept))
-    for (const it of items) itemCodes(it).forEach((code) => walk(code, termOrder(t)));
+  // A course comes before a held one when it is in the held course's chain and
+  // not the other way round. Courses in each other's chains are on one level:
+  // Linear Algebra, Calculus III and Differential Equations each accept
+  // "Calculus II, or one of the other two".
+  const due = new Map<string, number>();
+  for (const [t, items] of Object.entries(kept)) {
+    for (const held of items.flatMap(itemCodes)) {
+      for (const c of chain(held)) {
+        if (!chain(c).has(held)) due.set(c, Math.min(due.get(c) ?? Infinity, termOrder(t)));
+      }
+    }
+  }
   const mine = new Set(covered); // before the requirement slots widen it
   const horizon = open.length ? termOrder(open[0]) : Infinity;
   const skipped: string[] = [];

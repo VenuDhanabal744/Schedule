@@ -140,6 +140,31 @@ describe('autoPlan', () => {
     expect(run({ plan: later, index }).skipped).toEqual([]);
   });
 
+  it('treats courses that accept each other as one level: Linear Algebra does not put Calculus III behind you', () => {
+    // the registrar's expressions: each takes Calculus II or one of the others
+    const calc2 = 'AS.110.107[C]^OR^AS.110.109[C]^OR^AS.110.113[C]';
+    const index = indexOf(
+      course('AS.110.108'),
+      course('AS.110.109', { prereqs: [{ text: '', expr: 'AS.110.106[C]^OR^AS.110.108[C]' }] }),
+      course('AS.110.201', { prereqs: [{ text: '', expr: `${calc2}^OR^AS.110.202[C]^OR^AS.110.302[C]` }] }),
+      course('AS.110.202', { prereqs: [{ text: '', expr: `${calc2}^OR^AS.110.201[C]^OR^AS.110.212[C]^OR^AS.110.302[C]` }] }),
+      course('AS.110.302', { prereqs: [{ text: '', expr: `${calc2}^OR^AS.110.201[C]^OR^AS.110.202[C]^OR^AS.110.211[C]` }] }),
+      // honors Calculus III needs linear algebra, and nothing lists it back directly
+      course('AS.110.211', { prereqs: [{ text: '', expr: 'AS.110.201[C]^OR^AS.110.212[C]' }] })
+    );
+    const held = (code: string): Plan => ({
+      ...defaultPlan(),
+      terms: { 'Prior credit': [{ id: 'la', code, title: code, credits: 4, status: 'completed' }] },
+    });
+    // (honors Calculus III reaches Calculus II only through the same-level courses)
+    for (const code of ['AS.110.201', 'AS.110.302', 'AS.110.211']) {
+      const { plan, skipped } = run({ plan: held(code), index });
+      // Calculus I and II are behind you; Calculus III is still to come
+      expect(skipped.sort()).toEqual(['AS.110.108', 'AS.110.109']);
+      expect(Object.values(plan.terms).flat().map((it) => it.code)).toContain('AS.110.202');
+    }
+  });
+
   it('moves later courses up when prior credit empties the early terms', () => {
     const prior: PlanItem[] = [...sample.standard[0], ...sample.standard[1]].map((e, i) => ({
       id: `p${i}`,
