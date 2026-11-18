@@ -159,6 +159,14 @@ Pre-Professional Advising pages named in their `source`; they are unofficial, an
   Area Course 2", "EN.601.3xx/4xx") to list the catalog courses that fit it, and choose
   one to replace the placeholder. Slots the catalog only describes in words ("Upper Level
   Biology Elective") and free electives have no list.
+- **Recommended** (planner sidebar tab) — for the semester you pick, lists courses that fill
+  something you still need: an open requirement slot or group in your majors, or a
+  placeholder card in that semester. It keeps only courses you can take then: not already
+  planned or ruled out by one you have, prerequisites (and, at JHU, the catalog's
+  "Recommended Course Background") done in earlier terms, and offered that season. Ranked
+  by how much each fills, how many required courses it unlocks, then professor rating; the
+  suggested set fits your credit cap without filling one requirement twice. "Add all" adds
+  it; a course that fills a placeholder replaces it.
 - **Order check and Mark done** — the planner checks every course's prerequisites and
   corequisites (a lecture and its lab must share a term) and says so above the grid. A
   course the registrar bars after one you hold counts as taken (AS.030.103 for AS.030.102).

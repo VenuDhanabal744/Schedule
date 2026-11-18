@@ -11,7 +11,7 @@ import {
 } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import type { IndexCourse, PlannerData, ReqTemplate } from '../types';
-import { fetchPlannerData, fetchRequirementTemplate } from '../api';
+import { fetchPlannerData, fetchRequirementTemplate, getRating } from '../api';
 import {
   PRIOR,
   catalogTerm,
@@ -29,12 +29,16 @@ import {
   termSequence,
 } from '../plan';
 import type { Plan, PlanItem, PlanStatus, Warning } from '../plan';
+import type { Recommendation } from '../recommend';
 import { matchRequirements } from '../requirements';
 import type { GroupProgress } from '../requirements';
 import { samplePlans, sampleFor } from '../samplePlans';
 import { AutoPlan } from './AutoPlan';
 import { autoPlan, slotEntry, slotMatch } from '../autoplan';
 import { SlotOptions } from './SlotOptions';
+import { RatingBadge } from './RatingBadge';
+import { recommend } from '../recommend';
+import { useRatings } from '../useRatings';
 
 type Drag = { kind: 'item'; id: string; label: string } | { kind: 'new'; code: string; label: string };
 
@@ -51,11 +55,15 @@ function SearchResult({
   pattern,
   onAdd,
   onInfo,
+  addLabel = '+ Add',
+  extra,
 }: {
   course: IndexCourse;
   pattern: string | null;
   onAdd: () => void;
   onInfo: () => void;
+  addLabel?: string;
+  extra?: React.ReactNode; // shown under the course (recommendation reasons)
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `new-${course.code}`,
@@ -82,9 +90,10 @@ function SearchResult({
             onAdd();
           }}
         >
-          + Add
+          {addLabel}
         </button>
       </div>
+      {extra}
     </div>
   );
 }
@@ -370,7 +379,7 @@ export function Planner({
   const [plan, setPlan] = useState<Plan>(() => loadPlan(school));
   const [data, setData] = useState<PlannerData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<'add' | 'reqs'>('add');
+  const [tab, setTab] = useState<'add' | 'reqs' | 'rec'>('add');
   const [query, setQuery] = useState('');
   const [target, setTarget] = useState('');
   const [openCard, setOpenCard] = useState<string | null>(null);
@@ -582,6 +591,62 @@ export function Planner({
     .flat()
     .reduce((n, it) => n + (it.status === 'completed' ? it.credits : 0), 0);
 
+  // professor rating of a course: its best-rated instructor in the newest term
+  const ratingOf = (c: IndexCourse) =>
+    Math.max(0, ...(c.instructors ?? []).map((n) => getRating(n)?.avgRating ?? 0)) || null;
+  // the semester to recommend for: the "Add to" one, unless that is prior credit
+  const recTerm = targetTerm !== PRIOR ? targetTerm : seq.find((t) => t !== PRIOR);
+  // only on what it reads (~150 ms on a full catalog), not on every render or drag
+  const recs = useMemo(
+    () =>
+      tab === 'rec' && data && recTerm
+        ? recommend({
+            plan,
+            term: recTerm,
+            index,
+            imported,
+            templates: activeTemplates,
+            slotMatch: (it) => slotOf(it)?.match,
+            rating: ratingOf,
+          })
+        : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- activeTemplates and slotOf are rebuilt each render from plan + loaded
+    [tab, data, recTerm, plan, loaded, index, imported]
+  );
+  const shownRecs = recs ? [...recs.suggested, ...recs.more.slice(0, 30)] : [];
+  useRatings(shownRecs.flatMap((r) => r.course.instructors ?? [])); // fetches them; re-renders when they land
+  const addRec = (r: Recommendation) =>
+    r.replaces ? pickCourse(recTerm!, r.replaces.id, r.course.code) : addCourse(recTerm!, r.course.code);
+  const recCard = (r: Recommendation) => {
+    const best = (r.course.instructors ?? [])
+      .map((n) => getRating(n))
+      .filter((x) => x)
+      .sort((a, b) => b!.avgRating - a!.avgRating)[0];
+    return (
+      <SearchResult
+        key={r.course.code}
+        course={r.course}
+        pattern={offeringLabel(offeringPattern(r.course.terms, imported))}
+        onAdd={() => addRec(r)}
+        onInfo={() => onInfo(r.course.code)}
+        addLabel={r.replaces ? 'Use' : '+ Add'}
+        extra={
+          <div className="rec-why">
+            {r.reasons.map((why) => (
+              <div key={why}>{why}</div>
+            ))}
+            {r.course.instructors?.length ? (
+              <div>
+                {r.course.instructors.slice(0, 2).join('; ')}{' '}
+                <RatingBadge rating={best ?? getRating(r.course.instructors[0])} />
+              </div>
+            ) : null}
+          </div>
+        }
+      />
+    );
+  };
+
   let cumulative = 0;
 
   return (
@@ -595,7 +660,56 @@ export function Planner({
             <button className={tab === 'reqs' ? 'active' : ''} onClick={() => setTab('reqs')}>
               Requirements
             </button>
+            <button className={tab === 'rec' ? 'active' : ''} onClick={() => setTab('rec')}>
+              Recommended
+            </button>
           </div>
+
+          {tab === 'rec' && (
+            <div className="search-pane">
+              <label className="plan-target">
+                For
+                <select value={recTerm} onChange={(e) => setTarget(e.target.value)}>
+                  {seq
+                    .filter((t) => t !== PRIOR)
+                    .map((t) => (
+                      <option key={t}>{t}</option>
+                    ))}
+                </select>
+              </label>
+              <div className="result-count">
+                {!recs
+                  ? data
+                    ? 'Add a semester to the plan first.'
+                    : 'Loading catalogs…'
+                  : !activeTemplates.length && !recs.suggested.length && !recs.more.length
+                    ? 'Add your major on the Requirements tab (or run Auto-plan), so there is something to recommend.'
+                    : recs.room > 0
+                      ? `${termCredits(plan.terms[recTerm!])} cr planned in ${recTerm}; room for ${recs.room} more under your ${plan.maxCredits} cr cap.`
+                      : `${recTerm} is at your ${plan.maxCredits} cr cap; courses that replace a placeholder can still fit.`}
+              </div>
+              {recs && !recs.suggested.length && !recs.more.length && activeTemplates.length > 0 && (
+                <div className="more">
+                  Nothing to recommend for {recTerm}: your majors’ requirements are planned, or what’s left needs
+                  prerequisites first or isn’t offered then.
+                </div>
+              )}
+              <div className="results">
+                {recs && recs.suggested.length > 0 && (
+                  <div className="rec-head">
+                    Suggested for {recTerm} ({recs.suggested.reduce((n, r) => n + r.credits, 0)} cr)
+                    <button className="btn-add" onClick={() => recs.suggested.forEach(addRec)}>
+                      Add all
+                    </button>
+                  </div>
+                )}
+                {recs?.suggested.map(recCard)}
+                {recs && recs.more.length > 0 && <div className="rec-head">Other options</div>}
+                {recs?.more.slice(0, 30).map(recCard)}
+                {recs && recs.more.length > 30 && <div className="more">Showing 30 of {recs.more.length} other options</div>}
+              </div>
+            </div>
+          )}
 
           {tab === 'add' && (
             <div className="search-pane">

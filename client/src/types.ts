@@ -74,6 +74,8 @@ export type IndexCourse = {
   areas: string;
   writingIntensive: boolean;
   terms: string[]; // imported terms it appears in
+  instructors?: string[]; // in its newest imported term
+  background?: string; // the description's "Recommended Course Background" (JHU)
   prereqs?: RawReq[];
   coreqs?: RawReq[];
   posTags?: string[];
