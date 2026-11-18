@@ -196,9 +196,13 @@ function plannerData(school) {
   const byCode = new Map();
   for (const cat of catalogs) {
     for (const c of cat.courses) {
-      const { sections: _sections, school: _school, ...info } = c;
-      // later terms overwrite title/credits, so the newest listing wins
-      byCode.set(c.code, { ...info, terms: [...(byCode.get(c.code)?.terms ?? []), cat.term] });
+      const { sections, school: _school, ...info } = c;
+      // later terms overwrite title/credits/instructors, so the newest listing wins
+      byCode.set(c.code, {
+        ...info,
+        instructors: [...new Set(sections.flatMap((s) => s.instructors))],
+        terms: [...(byCode.get(c.code)?.terms ?? []), cat.term],
+      });
     }
   }
   for (const [code, entry] of byCode) {
@@ -207,6 +211,9 @@ function plannerData(school) {
     if (d?.coreqs) entry.coreqs = d.coreqs;
     if (d?.posTags) entry.posTags = d.posTags;
     if (d?.repeatable) entry.repeatable = true;
+    // JHU: advice the registrar doesn't enforce, e.g. Calculus II's "Calculus I"
+    const background = d?.description?.match(/Recommended Course Background:\s*([^\n]*?)(?:\.\s|\.$|\n|$)/i)?.[1];
+    if (background) entry.background = background;
   }
   const data = { stamp, catalogs, details, index: [...byCode.values()] };
   plannerCache.set(school, data);
