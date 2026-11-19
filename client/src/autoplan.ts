@@ -158,6 +158,8 @@ export type AutoPlanOptions = {
   // a course's sections in a planner term whose catalog is imported; undefined
   // where times aren't known (later terms), which then can't rule a term out
   sections?: (term: string, code: string) => Section[] | undefined;
+  // term -> courses (by code) or placeholders (by slot label) the student keeps out of it
+  blocked?: Record<string, string[]>;
 };
 
 // Lays the catalog's sample program out over the plan's semesters. Keeps every
@@ -330,6 +332,7 @@ export function autoPlan(o: AutoPlanOptions): {
     // never twice in one semester, and, where the term's times are known, only
     // if some sections of it, its corequisites and the term's courses don't overlap
     const fits = (t: string) => {
+      if (o.blocked?.[t]?.includes(code ?? e.label!)) return false;
       const items = terms[t] ?? [];
       if (code && items.some((it) => itemCodes(it).includes(code))) return false;
       const times = (c: string) => o.sections?.(t, c);
@@ -411,7 +414,13 @@ export function autoPlan(o: AutoPlanOptions): {
     plan: {
       ...base,
       maxCredits,
-      autoPlan: { premed: o.premed, semesterCount: o.semesterCount, focusName: o.focusName, templateId: sample.templateId },
+      autoPlan: {
+        premed: o.premed,
+        semesterCount: o.semesterCount,
+        focusName: o.focusName,
+        templateId: sample.templateId,
+        ...(o.blocked && Object.keys(o.blocked).length ? { blocked: o.blocked } : {}),
+      },
       terms,
       templates: [...new Set([...plan.templates, ...templates])],
       assign: {

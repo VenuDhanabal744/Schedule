@@ -56,6 +56,13 @@ export function AutoPlan({
   // pre-med picks the top-ranked area unless the student chose one
   const chosen = focus ?? (premed ? best?.tag ?? '' : '');
   const hasAuto = hasAutoPlan(plan);
+  // courses kept out of a semester from a card's menu
+  const blocked = Object.entries(plan.autoPlan?.blocked ?? {}).flatMap(([t, keys]) => keys.map((key) => [t, key]));
+  const unblock = (term: string, key: string) => {
+    const rest = plan.autoPlan!.blocked![term].filter((k) => k !== key);
+    const { [term]: _gone, ...others } = plan.autoPlan!.blocked!;
+    onApply({ ...plan, autoPlan: { ...plan.autoPlan!, blocked: rest.length ? { ...others, [term]: rest } : others } });
+  };
 
   const generate = async () => {
     if (!sample) return;
@@ -74,6 +81,7 @@ export function AutoPlan({
       template: typeof template === 'object' ? template : undefined,
       focusName: ranked.find((r) => r.tag === chosen)?.name,
       sections,
+      blocked: plan.autoPlan?.blocked,
     });
     onApply(next);
     const placed = Object.values(next.terms).flat().filter(replaceable);
@@ -185,6 +193,22 @@ export function AutoPlan({
                 ? 'Pre-med: use the catalog’s pre-med sample (adds Organic Chemistry I, II and lab) and turn on the pre-med checklist'
                 : 'Pre-med: turn on the pre-med checklist (this major’s catalog has no pre-med sample)'}
             </label>
+            {blocked.length > 0 && (
+              <div className="auto-blocked">
+                <div className="cd-parsed">Kept out of a semester (Undo, then Create plan, to let one back in):</div>
+                {blocked.map(([term, key]) => (
+                  <div key={term + key} className="auto-blocked-row">
+                    <span>
+                      {key}
+                      {index.get(key) ? ` ${index.get(key)!.title}` : ''} — {term}
+                    </span>
+                    <button className="ics-cancel" onClick={() => unblock(term, key)}>
+                      Undo
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
             {template === 'failed' && !sample && <p className="cd-parsed">Couldn’t load this major’s sample program.</p>}
             {!!sample?.focusAreas.length && (
               <>

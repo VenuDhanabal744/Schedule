@@ -197,11 +197,16 @@ function plannerData(school) {
   for (const cat of catalogs) {
     for (const c of cat.courses) {
       const { sections, school: _school, ...info } = c;
+      const prev = byCode.get(c.code);
+      // no section a student can register into (the client's sectionIsOpen rule)
+      const full = !sections.some((s) => !s.status || !/closed|full|waitlist|cancel/i.test(s.status));
+      const fullIn = [...(prev?.fullIn ?? []), ...(full ? [cat.term] : [])];
       // later terms overwrite title/credits/instructors, so the newest listing wins
       byCode.set(c.code, {
         ...info,
         instructors: [...new Set(sections.flatMap((s) => s.instructors))],
-        terms: [...(byCode.get(c.code)?.terms ?? []), cat.term],
+        terms: [...(prev?.terms ?? []), cat.term],
+        ...(fullIn.length ? { fullIn } : {}),
       });
     }
   }
