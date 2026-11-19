@@ -495,8 +495,9 @@ export function Planner({
     setPlan((p) => {
       const from = Object.keys(p.terms).find((t) => p.terms[t].some((it) => it.id === id));
       if (!from || from === to) return p;
-      // a course the student moves is theirs: the auto-planner leaves it there
-      const item = { ...p.terms[from].find((it) => it.id === id)!, auto: undefined };
+      // an auto-planned card the student moves stays there when re-planning
+      const moved = p.terms[from].find((it) => it.id === id)!;
+      const item = moved.auto ? { ...moved, pinned: true } : moved;
       const without = setTermItems(p, from, p.terms[from].filter((it) => it.id !== id));
       return setTermItems(without, to, [...(without.terms[to] ?? []), item]);
     });
