@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { IndexCourse } from './types';
+import type { IndexCourse, Section } from './types';
+import type { SampleEntry, SamplePlan } from './samplePlans';
 import { autoPlan, matchingCourses, rankFocusAreas, removeAutoPlan, semesters, slotEntry, slotMatch } from './autoplan';
 import { defaultPlan, planWarnings, termCredits } from './plan';
 import type { Plan, PlanItem } from './plan';
@@ -316,6 +317,52 @@ describe('what is the student’s and what is the planner’s', () => {
     // placeholders from before `fills` are recognised by their title
     expect(slotEntry(item('x', { title: 'Focus Area Course 1 (Neuroengineering)' }), sample)?.slot).toBe('focus');
     expect(slotEntry(item('y', { title: 'My own elective' }), sample)).toBeUndefined();
+  });
+});
+
+describe('semesters that can actually be scheduled', () => {
+  const mini = (standard: SampleEntry[][]): SamplePlan => ({
+    name: 'Mini',
+    source: '',
+    templateId: 'mini',
+    premedTemplateId: 'jhu-premed',
+    slotGroups: {},
+    focusAreas: [],
+    standard,
+  });
+  const at = (days: string[], start: number): Section => ({
+    section: '01',
+    instructors: [],
+    meetings: [{ days, start: start * 60, end: start * 60 + 75 }],
+    status: 'Open',
+    seatsAvailable: '',
+    openSeats: '',
+    waitlisted: '',
+    location: '',
+    instructionMethod: '',
+  });
+  const where = (plan: Plan, code: string) =>
+    Object.entries(plan.terms).flatMap(([t, items]) => items.filter((it) => it.code === code).map(() => t));
+  const idx = indexOf(course('AS.100.101'), course('AS.100.102'), course('AS.100.103'));
+
+  it('moves a course whose every section overlaps another of that semester', () => {
+    const sample = mini([[{ credits: 3, codes: ['AS.100.101'] }, { credits: 3, codes: ['AS.100.102'] }], []]);
+    // both only meet MW 9:00 in Fall 2026; Spring 2027's times aren't known
+    const sections = (term: string, code: string) =>
+      term === 'Fall 2026' && code !== 'AS.100.103' ? [at(['M', 'W'], 9)] : undefined;
+    const { plan } = run({ sample, index: idx, semesterCount: 2, sections });
+    expect(where(plan, 'AS.100.101')).toEqual(['Fall 2026']);
+    expect(where(plan, 'AS.100.102')).toEqual(['Spring 2027']);
+    // without section times the sample's order stands
+    expect(where(run({ sample, index: idx, semesterCount: 2 }).plan, 'AS.100.102')).toEqual(['Fall 2026']);
+  });
+
+  it('never puts one course twice in a semester', () => {
+    // a repeatable course the sample lists every semester, squeezed into one
+    const sample = mini([[{ credits: 1, codes: ['AS.100.103'] }], [{ credits: 1, codes: ['AS.100.103'] }]]);
+    const { plan, unplaced } = run({ sample, index: idx, semesterCount: 1 });
+    expect(where(plan, 'AS.100.103')).toEqual(['Fall 2026']);
+    expect(unplaced.map((e) => e.codes)).toEqual([['AS.100.103']]);
   });
 });
 

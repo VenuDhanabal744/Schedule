@@ -34,6 +34,34 @@ function meetingSignature(s: Section): string {
     .join('|');
 }
 
+// Whether one section of each course can be picked with no two overlapping:
+// the generator's question with no constraints, stopping at the first answer.
+// As there, a course with every section canceled can't be taken, and one with
+// only untimed sections (online, TBA) constrains nothing.
+export function canSchedule(courses: Section[][]): boolean {
+  const live = courses.map((sections) => sections.filter((s) => !sectionCanceled(s)));
+  if (live.some((l) => !l.length)) return false;
+  const options = live
+    .map((l) => [...new Map(l.filter((s) => s.meetings.length).map((s) => [meetingSignature(s), s])).values()])
+    .filter((o) => o.length)
+    .sort((a, b) => a.length - b.length); // fewest options first prunes soonest
+  const picked: Section[] = [];
+  let steps = 0;
+  const pick = (i: number): boolean => {
+    if (i === options.length) return true;
+    // shortcut: past 200k tries, assume it fits rather than freeze; raise if real plans hit it
+    if (++steps > 200_000) return true;
+    for (const s of options[i]) {
+      if (picked.some((p) => sectionsConflict(p, s))) continue;
+      picked.push(s);
+      if (pick(i + 1)) return true;
+      picked.pop();
+    }
+    return false;
+  };
+  return pick(0);
+}
+
 export type RatingOf = (instructor: string) => number | null;
 
 // Average RMP rating of a section's instructors; null if none are rated.

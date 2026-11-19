@@ -1,7 +1,8 @@
-import type { IndexCourse, ReqMatch, ReqTemplate } from './types';
+import type { IndexCourse, ReqMatch, ReqTemplate, Section } from './types';
 import { itemCodes, newId, offeringPattern, reqItems, termCredits, termOrder, termSeason } from './plan';
 import type { Plan, PlanItem } from './plan';
 import { courseReqs, credited, reqCodes, unmet } from './prereqs';
+import { canSchedule } from './schedule';
 import { areaTags, itemMatches, matchRequirements, slotOptions } from './requirements';
 import { samplePlans } from './samplePlans';
 import type { SampleEntry, SamplePlan } from './samplePlans';
@@ -106,6 +107,12 @@ export const matchingCourses = (m: ReqMatch, index: Map<string, IndexCourse>): I
     )
   );
 
+// Course codes an auto-plan run may place or keep: the ones to fetch times for.
+export const autoPlanCodes = (plan: Plan, sample: SamplePlan) => [
+  ...[...sample.standard, ...(sample.premed ?? [])].flat().flatMap((e) => e.codes ?? []),
+  ...Object.values(plan.terms).flat().flatMap((it) => (it.code ? [it.code] : [])),
+];
+
 // Placed by the auto-planner and not yet under way: the next run replaces it.
 // A course the student adds, or an auto-planned one they move, stays put.
 export const replaceable = (it: PlanItem) => !!it.auto && !it.pinned && it.status === 'planned';
@@ -148,6 +155,9 @@ export type AutoPlanOptions = {
   imported: string[];
   template?: ReqTemplate; // lets courses already in the plan stand in for sample rows
   focusName?: string;
+  // a course's sections in a planner term whose catalog is imported; undefined
+  // where times aren't known (later terms), which then can't rule a term out
+  sections?: (term: string, code: string) => Section[] | undefined;
 };
 
 // Lays the catalog's sample program out over the plan's semesters. Keeps every
@@ -317,6 +327,16 @@ export function autoPlan(o: AutoPlanOptions): {
     const room = e.credits + partners.reduce((n, t) => n + t.e.credits, 0);
     // a course already placed that names this one as a corequisite fixes its term
     const tied = Math.min(...[...when].filter(([c]) => code && names(c, code)).map(([, at]) => at));
+    // never twice in one semester, and, where the term's times are known, only
+    // if some sections of it, its corequisites and the term's courses don't overlap
+    const fits = (t: string) => {
+      const items = terms[t] ?? [];
+      if (code && items.some((it) => itemCodes(it).includes(code))) return false;
+      const times = (c: string) => o.sections?.(t, c);
+      if (!code || !times(code)) return true;
+      const lists = [...items.flatMap((it) => (it.code ? [it.code] : [])), code, ...partners.map((p) => p.code!)].map(times);
+      return canSchedule(lists.filter((l): l is Section[] => !!l));
+    };
     const checks = [
       (i: number) => {
         const order = termOrder(open[i]);
@@ -330,7 +350,9 @@ export function autoPlan(o: AutoPlanOptions): {
       (i: number) =>
         [season, ...partners.map((t) => only(index.get(t.code!)))].every((x) => !x || termSeason(open[i]) === x),
       (i: number) =>
-        load[i] + room <= maxCredits && (e.slot !== 'design' || (i > lastDesign && i + after < open.length)),
+        load[i] + room <= maxCredits &&
+        (e.slot !== 'design' || (i > lastDesign && i + after < open.length)) &&
+        fits(open[i]),
     ];
     // major electives stay behind the courses the catalog lists before them;
     // general ones (FA3/FA4, free) can go anywhere

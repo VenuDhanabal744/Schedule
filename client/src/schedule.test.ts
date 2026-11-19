@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Constraints, Course, Meeting, Section } from './types';
 import {
+  canSchedule,
   fmtMeetings,
   fmtTime,
   generateSchedules,
@@ -53,6 +54,24 @@ describe('conflicts', () => {
     const a = sec('01', [mt('MW', 9, 10), mt('F', 13, 14)]);
     expect(sectionsConflict(a, sec('02', [mt('F', 13.5, 15)]))).toBe(true);
     expect(sectionsConflict(a, sec('03', [mt('F', 14, 15)]))).toBe(false);
+  });
+});
+
+describe('canSchedule', () => {
+  const am = sec('01', [mt('MW', 9, 10)]);
+  const pm = sec('02', [mt('MW', 13, 14)]);
+  it('finds a combination when one exists, however the sections are ordered', () => {
+    expect(canSchedule([[am, pm], [sec('x', [mt('M', 9.5, 10.5)])]])).toBe(true);
+    expect(canSchedule([[sec('x', [mt('M', 9.5, 10.5)])], [am, pm], [sec('y', [mt('W', 13, 14)])]])).toBe(false);
+  });
+  it('ignores canceled and untimed sections, and courses with no timed section', () => {
+    expect(canSchedule([[am], [sec('c', [mt('MW', 9, 10)], { status: 'Canceled' }), pm]])).toBe(true);
+    expect(canSchedule([[am], [sec('tba', [])]])).toBe(true);
+    expect(canSchedule([])).toBe(true);
+  });
+  it('like the generator, fails a course with no section left to take', () => {
+    expect(canSchedule([[am], [sec('c', [mt('F', 9, 10)], { status: 'Canceled' })]])).toBe(false);
+    expect(canSchedule([[am], []])).toBe(false);
   });
 });
 
