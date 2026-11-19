@@ -11,7 +11,7 @@ import {
 } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import type { IndexCourse, PlannerData, ReqTemplate } from '../types';
-import { fetchPlannerData, fetchRequirementTemplate, getRating } from '../api';
+import { fetchPlannerData, fetchRequirementTemplate, fetchSections, getRating } from '../api';
 import {
   PRIOR,
   catalogTerm,
@@ -34,7 +34,7 @@ import { matchRequirements, slotOptions } from '../requirements';
 import type { GroupProgress } from '../requirements';
 import { samplePlans, sampleFor } from '../samplePlans';
 import { AutoPlan } from './AutoPlan';
-import { autoPlan, slotEntry, slotMatch } from '../autoplan';
+import { autoPlan, autoPlanCodes, slotEntry, slotMatch } from '../autoplan';
 import { SlotOptions } from './SlotOptions';
 import { RatingBadge } from './RatingBadge';
 import { recommend } from '../recommend';
@@ -501,7 +501,13 @@ export function Planner({
       const without = setTermItems(p, from, p.terms[from].filter((it) => it.id !== id));
       return setTermItems(without, to, [...(without.terms[to] ?? []), item]);
     });
-  const setTermDone = (term: string, done: boolean) =>
+  const setTermDone = async (term: string, done: boolean) => {
+    // the re-plan checks each imported semester can be scheduled: fetch times first
+    const { sample: replanning } = planned(plan);
+    const sections =
+      done && plan.autoPlan && replanning
+        ? await fetchSections(school, autoPlanCodes(plan, replanning), imported).catch(() => undefined)
+        : undefined;
     setPlan((p) => {
       const next = setTermItems(
         p,
@@ -520,9 +526,11 @@ export function Planner({
             index,
             imported,
             template,
+            sections,
           }).plan
         : next;
     });
+  };
   // a placeholder becomes the course chosen for it: the student's own from here on
   const pickCourse = (term: string, id: string, code: string) => {
     const c = index.get(code);

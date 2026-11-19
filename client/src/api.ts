@@ -1,4 +1,5 @@
-import type { Course, CourseInfo, PlannerData, Rating, ReqTemplate } from './types';
+import type { Course, CourseInfo, PlannerData, Rating, ReqTemplate, Section } from './types';
+import { catalogTerm } from './plan';
 
 export type TermOption = { name: string; code: string };
 
@@ -51,6 +52,21 @@ export async function fetchRequirementTemplate(school: string, id: string): Prom
   );
   if (!res.ok) throw new Error((await res.json()).error ?? 'Failed to load requirements');
   return res.json();
+}
+
+// Section times of these courses, looked up by planner term ("Fall 2026") and
+// code; undefined for a term whose catalog isn't imported.
+export async function fetchSections(
+  school: string,
+  codes: string[],
+  imported: string[]
+): Promise<(term: string, code: string) => Section[] | undefined> {
+  const res = await fetch(
+    `/api/sections?school=${encodeURIComponent(school)}&codes=${encodeURIComponent([...new Set(codes)].join(','))}`
+  );
+  if (!res.ok) throw new Error((await res.json()).error ?? 'Failed to load sections');
+  const byTerm: Record<string, Record<string, Section[]>> = await res.json();
+  return (term, code) => byTerm[catalogTerm(term, imported) ?? '']?.[code];
 }
 
 export async function fetchCourseInfo(school: string, code: string): Promise<CourseInfo> {

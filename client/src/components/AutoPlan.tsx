@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { IndexCourse, ReqSummary, ReqTemplate } from '../types';
-import { fetchRequirementTemplate } from '../api';
-import { autoPlan, hasAutoPlan, rankFocusAreas, removeAutoPlan, replaceable, semesters } from '../autoplan';
+import { fetchRequirementTemplate, fetchSections } from '../api';
+import { autoPlan, autoPlanCodes, hasAutoPlan, rankFocusAreas, removeAutoPlan, replaceable, semesters } from '../autoplan';
 import { planWarnings, termCredits, termOrder } from '../plan';
 import type { Plan } from '../plan';
 import { samplePlans, sampleFor } from '../samplePlans';
@@ -57,9 +57,12 @@ export function AutoPlan({
   const chosen = focus ?? (premed ? best?.tag ?? '' : '');
   const hasAuto = hasAutoPlan(plan);
 
-  const generate = () => {
+  const generate = async () => {
     if (!sample) return;
     setBusy(true);
+    // without section times the plan is still built; it just can't check that
+    // each imported semester can be scheduled
+    const sections = await fetchSections(school, autoPlanCodes(plan, sample), imported).catch(() => undefined);
     const { plan: next, unplaced, skipped } = autoPlan({
       plan,
       sample,
@@ -70,6 +73,7 @@ export function AutoPlan({
       imported,
       template: typeof template === 'object' ? template : undefined,
       focusName: ranked.find((r) => r.tag === chosen)?.name,
+      sections,
     });
     onApply(next);
     const placed = Object.values(next.terms).flat().filter(replaceable);

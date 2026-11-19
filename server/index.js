@@ -277,6 +277,24 @@ app.get('/api/requirements', (req, res) => {
   res.json(t);
 });
 
+// The sections of some courses in each imported term, { term: { code: sections } }:
+// the auto-planner checks a semester can be scheduled before filling it.
+app.get('/api/sections', (req, res) => {
+  const school = String(req.query.school ?? 'jhu');
+  if (!SCHOOLS[school]) return res.status(400).json({ error: `Unknown school "${school}"` });
+  const codes = new Set(String(req.query.codes ?? '').split(',').filter(Boolean));
+  if (codes.size > 400) return res.status(400).json({ error: 'At most 400 courses per request' });
+  const { catalogs } = plannerData(school);
+  res.json(
+    Object.fromEntries(
+      catalogs.map((cat) => [
+        cat.term,
+        Object.fromEntries(cat.courses.filter((c) => codes.has(c.code)).map((c) => [c.code, c.sections])),
+      ])
+    )
+  );
+});
+
 // Everything known about one course: description/prerequisites and its
 // sections in every imported term.
 app.get('/api/course', (req, res) => {
