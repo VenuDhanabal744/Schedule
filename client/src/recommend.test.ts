@@ -26,6 +26,7 @@ const index = new Map(
     // advice only: no registrar prerequisite
     course('AS.110.104', { background: 'Grade of C- or Better in AS.110.106 or AS.110.101, or a 5 on the AP AB exam' }),
     course('AS.171.101'),
+    course('AS.171.103', { fullIn: ['Fall 2026'] }), // every Fall section closed or waitlisted
     course('AS.171.102', { terms: ['Spring 2027'] }),
     course('AS.030.101', { prereqs: [{ text: 'not eligible', expr: 'AS.030.103[C]', negative: true }] }),
     course('AS.030.103'),
@@ -41,7 +42,7 @@ const template: ReqTemplate = {
   source: '',
   note: '',
   groups: [
-    { id: 'core', name: 'Core', courses: ['AS.110.101', 'AS.110.102', 'AS.110.103', 'AS.110.104', 'AS.171.101', 'AS.171.102', { oneOf: ['AS.030.101', 'AS.030.103'] }] },
+    { id: 'core', name: 'Core', courses: ['AS.110.101', 'AS.110.102', 'AS.110.103', 'AS.110.104', 'AS.171.101', 'AS.171.102', 'AS.171.103', { oneOf: ['AS.030.101', 'AS.030.103'] }] },
     { id: 'arts', name: 'Arts', match: { areas: ['FA3'] }, credits: 6 },
   ],
 };
@@ -56,7 +57,7 @@ describe('recommend', () => {
     expect(room).toBe(12);
     const all = codes([...suggested, ...more]);
     // AS.110.102/3 wait for prerequisites, AS.110.104 for its recommended
-    // background, AS.171.102 isn't offered in Fall,
+    // background, AS.171.102 isn't offered in Fall, AS.171.103 has no open seat,
     // AS.030.101 is taken (so its one-of slot is filled), graduate courses are left out
     expect(all.sort()).toEqual(['AS.010.101', 'AS.010.102', 'AS.110.101', 'AS.171.101']);
     // AS.110.101 unlocks AS.110.102, so it ranks first among the required courses
@@ -70,13 +71,13 @@ describe('recommend', () => {
   it('says exactly what each course and the set move, by the same matcher as the Requirements tab', () => {
     const plan: Plan = { ...defaultPlan(), maxCredits: 12, terms: { 'Prior credit': [item('old', { code: 'AS.030.101', status: 'completed' })] } };
     const { suggested, more, setGains, total } = run(plan, 'Fall 2026', { templates: [{ ...template, totalCredits: 120 }] });
-    // Core already has AS.030.101's slot: 1 of 7
-    expect(suggested[0].gains).toEqual([{ name: 'Core', unit: 'courses', need: 7, from: 1, to: 2 }]);
+    // Core already has AS.030.101's slot: 1 of 8
+    expect(suggested[0].gains).toEqual([{ name: 'Core', unit: 'courses', need: 8, from: 1, to: 2 }]);
     expect(more.find((r) => r.course.code === 'AS.010.101')!.gains).toEqual([
       { name: 'Arts', unit: 'credits', need: 6, from: 0, to: 3 },
     ]);
     expect(setGains).toEqual([
-      { name: 'Core', unit: 'courses', need: 7, from: 1, to: 3 },
+      { name: 'Core', unit: 'courses', need: 8, from: 1, to: 3 },
       { name: 'Arts', unit: 'credits', need: 6, from: 0, to: 4 },
     ]);
     expect(total).toEqual({ from: 3, to: 13, need: 120 });
@@ -110,6 +111,7 @@ describe('recommend', () => {
     expect(all).toContain('AS.110.102');
     expect(all).toContain('AS.110.104'); // background met by AS.110.101
     expect(all).toContain('AS.171.102');
+    expect(all).toContain('AS.171.103'); // full only in Fall
     expect(all).not.toContain('AS.110.101');
     expect(all).not.toContain('AS.030.101'); // barred after AS.030.103
     expect(all).not.toContain('AS.110.103');

@@ -142,6 +142,7 @@ function PlanCard({
   onAssign,
   onInfo,
   onOptions,
+  onKeepOut,
 }: {
   item: PlanItem;
   term: string;
@@ -157,6 +158,7 @@ function PlanCard({
   onAssign: (templateId: string, groupId: string) => void;
   onInfo: () => void;
   onOptions?: () => void; // a sample-program placeholder: list what can fill it
+  onKeepOut?: () => void; // an auto-planned card: keep it out of this term and re-plan
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: item.id,
@@ -274,6 +276,15 @@ function PlanCard({
               </select>
             </label>
           ))}
+          {onKeepOut && (
+            <button
+              className="plan-keepout"
+              onClick={onKeepOut}
+              title="Auto-plan puts it in another semester and fills this one with other courses"
+            >
+              Keep out of {term} and re-plan
+            </button>
+          )}
           <button className="plan-remove" onClick={onRemove}>
             Remove from plan
           </button>
@@ -501,35 +512,53 @@ export function Planner({
       const without = setTermItems(p, from, p.terms[from].filter((it) => it.id !== id));
       return setTermItems(without, to, [...(without.terms[to] ?? []), item]);
     });
-  const setTermDone = async (term: string, done: boolean) => {
-    // the re-plan checks each imported semester can be scheduled: fetch times first
-    const { sample: replanning } = planned(plan);
-    const sections =
-      done && plan.autoPlan && replanning
-        ? await fetchSections(school, autoPlanCodes(plan, replanning), imported).catch(() => undefined)
-        : undefined;
-    setPlan((p) => {
-      const next = setTermItems(
-        p,
-        term,
-        p.terms[term].map((it): PlanItem => ({ ...it, status: done ? 'completed' : 'planned' }))
-      );
-      // a finished semester is fixed: lay the rest of the auto-plan out around it
-      const { sample, template } = planned(p);
-      return done && sample && p.autoPlan
-        ? autoPlan({
-            plan: next,
-            sample,
-            ...p.autoPlan,
-            semesterCount: p.numTerms,
-            maxCredits: p.maxCredits,
-            index,
-            imported,
-            template,
-            sections,
-          }).plan
-        : next;
+  // Runs the last auto-plan again on `p`, with its settings; undefined if it has
+  // none. Fetches section times first, so imported semesters stay schedulable.
+  const replan = async (p: Plan) => {
+    const { sample, template } = planned(p);
+    if (!sample || !p.autoPlan) return undefined;
+    const sections = await fetchSections(school, autoPlanCodes(p, sample), imported).catch(() => undefined);
+    return autoPlan({
+      plan: p,
+      sample,
+      ...p.autoPlan,
+      semesterCount: p.numTerms,
+      maxCredits: p.maxCredits,
+      index,
+      imported,
+      template,
+      sections,
     });
+  };
+  const setTermDone = async (term: string, done: boolean) => {
+    const next = setTermItems(
+      plan,
+      term,
+      plan.terms[term].map((it): PlanItem => ({ ...it, status: done ? 'completed' : 'planned' }))
+    );
+    // a finished semester is fixed: lay the rest of the auto-plan out around it
+    setPlan((done && (await replan(next))?.plan) || next);
+  };
+  // "Keep out of this semester": drop the card, remember the block, re-plan around it
+  const [notice, setNotice] = useState<string | null>(null);
+  const keepOut = async (term: string, it: PlanItem) => {
+    const key = it.code ?? it.fills!;
+    const blocked = { ...plan.autoPlan?.blocked, [term]: [...(plan.autoPlan?.blocked?.[term] ?? []), key] };
+    const without = setTermItems(plan, term, plan.terms[term].filter((x) => x.id !== it.id));
+    const result = await replan({ ...without, autoPlan: { ...plan.autoPlan!, blocked } });
+    if (!result) return;
+    setPlan(result.plan);
+    setOpenCard(null);
+    const name = it.code ?? it.title;
+    const left = result.unplaced.some((e) => (e.codes ?? [e.label]).includes(key));
+    // the semesters that gained one (a placeholder may sit in several)
+    const count = (p: Plan, t: string) => (p.terms[t] ?? []).filter((x) => (x.code ?? x.fills) === key).length;
+    const gained = Object.keys(result.plan.terms).filter((t) => count(result.plan, t) > count(without, t));
+    setNotice(
+      left
+        ? `Kept ${name} out of ${term}, but it fits in no other semester under your ${plan.maxCredits} cr cap, so it's left out. Raise the cap, add a semester, or undo the block in Auto-plan.`
+        : `Kept ${name} out of ${term}${gained.length ? `; it's now in ${gained.join(', ')}` : ''}, and auto-plan refilled ${term}.`
+    );
   };
   // a placeholder becomes the course chosen for it: the student's own from here on
   const pickCourse = (term: string, id: string, code: string) => {
@@ -1129,6 +1158,14 @@ export function Planner({
             </div>
           </div>
 
+          {notice && (
+            <div className="plan-notice" role="status">
+              {notice}
+              <button aria-label="Dismiss" onClick={() => setNotice(null)}>
+                ×
+              </button>
+            </div>
+          )}
           {outOfOrder && (
             <div className={`plan-order${outOfOrder.length ? ' bad' : ''}`}>
               {outOfOrder.length
@@ -1194,6 +1231,11 @@ export function Planner({
                       onAssign={(templateId, groupId) => assignItem(templateId, it.id, groupId)}
                       onInfo={() => it.code && onInfo(it.code)}
                       onOptions={slotOf(it) && (() => setSlotCard({ term, id: it.id }))}
+                      onKeepOut={
+                        plan.autoPlan && it.auto && it.status === 'planned' && (it.code || it.fills)
+                          ? () => keepOut(term, it)
+                          : undefined
+                      }
                     />
                   ))}
                   {!termItems.length && <div className="plan-empty">Drop courses here</div>}

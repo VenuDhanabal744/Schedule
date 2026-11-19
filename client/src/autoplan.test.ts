@@ -366,6 +366,34 @@ describe('semesters that can actually be scheduled', () => {
   });
 });
 
+describe('keeping a course out of a semester', () => {
+  const termOf = (plan: Plan, pick: (it: PlanItem) => boolean) =>
+    Object.entries(plan.terms).flatMap(([t, items]) => items.filter(pick).map(() => t));
+
+  it('places it in another semester and refills the one it left', () => {
+    const once = run().plan;
+    const [term] = termOf(once, (it) => it.code === 'EN.661.250');
+    const { plan, unplaced } = run({ plan: once, blocked: { [term]: ['EN.661.250'] } });
+    expect(unplaced).toEqual([]);
+    const now = termOf(plan, (it) => it.code === 'EN.661.250');
+    expect(now).toHaveLength(1);
+    expect(now[0]).not.toBe(term);
+    // the semester it left still gets a full load
+    expect(termCredits(plan.terms[term])).toBeGreaterThanOrEqual(12);
+    // remembered, so a later re-plan ("Mark done") keeps it out too
+    expect(plan.autoPlan?.blocked).toEqual({ [term]: ['EN.661.250'] });
+  });
+
+  it('keeps a placeholder out by its slot', () => {
+    const once = run().plan;
+    const slot = 'Course tagged FA3 or FA4';
+    const terms = termOf(once, (it) => it.fills === slot);
+    const { plan } = run({ plan: once, blocked: { [terms[0]]: [slot] } });
+    expect(termOf(plan, (it) => it.fills === slot)).not.toContain(terms[0]);
+    expect(termOf(plan, (it) => it.fills === slot)).toHaveLength(terms.length);
+  });
+});
+
 describe('removeAutoPlan', () => {
   it('removes every card auto-plan placed that is still planned, and nothing of the student’s', () => {
     const once = run().plan;

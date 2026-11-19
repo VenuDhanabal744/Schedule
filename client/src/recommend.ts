@@ -141,6 +141,7 @@ export function recommend(o: {
   for (const code of new Set(needs.flatMap((n) => [...n.codes]))) {
     const c = index.get(code);
     if (!c || ruledOut.has(code) || !offered(c) || !ready(c)) continue;
+    if (cat && c.fullIn?.includes(cat)) continue; // no open seat left that term
     // a course counts toward one requirement: one that fills a required slot
     // can't also stand in for a placeholder (which would then reopen)
     const fills = needs.filter((n) => n.codes.has(code));
