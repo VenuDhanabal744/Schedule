@@ -1,6 +1,6 @@
 {
  "school": "jhu",
- "builtAt": "2026-11-14T23:23:29.574Z",
+ "builtAt": "2026-11-19T01:56:20.551Z",
  "templates": [
   {
    "id": "jhu-africana-studies-bachelor-arts",
@@ -297,7 +297,8 @@
         "EN.661.110"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab",
@@ -307,14 +308,16 @@
       "areas": [
        "FA1.1eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication",
      "name": "FA1 Writing and Communication",
      "courses": [
       "EN.661.250"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab-2",
@@ -324,21 +327,24 @@
       "areas": [
        "FA1.2eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning",
      "name": "FA2 Scientific and Quantitative Reasoning",
      "courses": [
       "AS.110.108"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-2",
      "name": "FA2 Scientific and Quantitative Reasoning",
      "courses": [
       "AS.110.109"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-3",
@@ -356,7 +362,8 @@
         "EN.553.431"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple",
@@ -370,7 +377,8 @@
         "EN.601.220"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple-2",
@@ -413,7 +421,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa3-creative-expression-en-foundational-ability-",
@@ -423,7 +432,8 @@
       "areas": [
        "FA3"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa4-engagement-with-society-en-foundational-abil",
@@ -433,7 +443,8 @@
       "areas": [
        "FA4"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection-en-foundational-ability-t",
@@ -443,7 +454,8 @@
       "areas": [
        "FA5"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection-en-foundational-ability-t-2",
@@ -453,7 +465,8 @@
       "areas": [
        "FA5eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa6-conceiving-of-and-realizing-projects-en-foun",
@@ -463,7 +476,8 @@
       "areas": [
        "FA6eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "calculus-complete-one-of-the-following-for-calcu",
@@ -9016,7 +9030,8 @@
         "EN.661.110"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab",
@@ -9026,14 +9041,16 @@
       "areas": [
        "FA1.1eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication",
      "name": "FA1 WRITING AND COMMUNICATION",
      "courses": [
       "EN.661.250"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab-2",
@@ -9043,21 +9060,24 @@
       "areas": [
        "FA1.2eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.108"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-2",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.109"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-one-co",
@@ -9070,7 +9090,8 @@
        "EN.553.311",
        "EN.553.433"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-two-se",
@@ -9097,7 +9118,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple",
@@ -9110,7 +9132,8 @@
         "EN.500.112"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple-2",
@@ -9145,7 +9168,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa3-creative-expression-en-foundational-ability-",
@@ -9155,7 +9179,8 @@
       "areas": [
        "FA3"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa4-engagement-with-society-en-foundational-abil",
@@ -9165,14 +9190,16 @@
       "areas": [
        "FA4"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection",
      "name": "FA5 ETHICAL REFLECTION",
      "courses": [
       "EN.580.111"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection-en-foundational-ability-t",
@@ -9182,7 +9209,8 @@
       "areas": [
        "FA5eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa6-conceiving-of-and-realizing-projects-en-foun",
@@ -9192,7 +9220,8 @@
       "areas": [
        "FA6eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "mathematics",
@@ -10174,7 +10203,8 @@
         "EN.661.110"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab",
@@ -10184,14 +10214,16 @@
       "areas": [
        "FA1.1eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication",
      "name": "FA1 Writing and Communication",
      "courses": [
       "EN.661.250"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab-2",
@@ -10201,21 +10233,24 @@
       "areas": [
        "FA1.2eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.108"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-2",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.109"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-one-co",
@@ -10229,7 +10264,8 @@
         "EN.560.240"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-two-se",
@@ -10248,7 +10284,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple",
@@ -10264,7 +10301,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple-2",
@@ -10295,7 +10333,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa3-creative-expression-en-foundational-ability-",
@@ -10305,7 +10344,8 @@
       "areas": [
        "FA3"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa4-engagement-with-society-en-foundational-abil",
@@ -10315,7 +10355,8 @@
       "areas": [
        "FA4"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection-en-foundational-ability-t",
@@ -10325,7 +10366,8 @@
       "areas": [
        "FA5eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa6-conceiving-of-and-realizing-projects-en-foun",
@@ -10335,7 +10377,8 @@
       "areas": [
        "FA6eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "mathematics",
@@ -11258,7 +11301,8 @@
         "EN.661.110"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab",
@@ -11268,14 +11312,16 @@
       "areas": [
        "FA1.1eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication",
      "name": "FA1 WRITING AND COMMUNICATION",
      "courses": [
       "EN.661.250"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab-2",
@@ -11285,28 +11331,32 @@
       "areas": [
        "FA1.2eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.108"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-2",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.109"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-3",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "EN.560.240"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple",
@@ -11322,7 +11372,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple-2",
@@ -11345,7 +11396,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa3-creative-expression-en-foundational-ability-",
@@ -11355,7 +11407,8 @@
       "areas": [
        "FA3"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa4-engagement-with-society-en-foundational-abil",
@@ -11365,14 +11418,16 @@
       "areas": [
        "FA4"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection",
      "name": "FA5 ETHICAL REFLECTION",
      "courses": [
       "EN.660.463"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection-en-foundational-ability-t",
@@ -11382,7 +11437,8 @@
       "areas": [
        "FA5eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa6-conceiving-of-and-realizing-projects-en-foun",
@@ -11392,7 +11448,8 @@
       "areas": [
        "FA6eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "mathematics",
@@ -12130,7 +12187,8 @@
         "EN.661.110"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab",
@@ -12140,14 +12198,16 @@
       "areas": [
        "FA1.1eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication",
      "name": "FA1 WRITING AND COMMUNICATION",
      "courses": [
       "EN.661.250"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab-2",
@@ -12157,28 +12217,32 @@
       "areas": [
        "FA1.2eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.108"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-2",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.109"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-3",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "EN.553.311"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple",
@@ -12191,7 +12255,8 @@
         "EN.500.112"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple-2",
@@ -12218,7 +12283,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa3-creative-expression-en-foundational-ability-",
@@ -12228,7 +12294,8 @@
       "areas": [
        "FA3"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa4-engagement-with-society-en-foundational-abil",
@@ -12238,7 +12305,8 @@
       "areas": [
        "FA4"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection-complete-one-from-the-fol",
@@ -12253,7 +12321,8 @@
         "EN.661.315"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection-en-foundational-ability-t",
@@ -12263,7 +12332,8 @@
       "areas": [
        "FA5eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa6-conceiving-of-and-realizing-projects-en-foun",
@@ -12273,7 +12343,8 @@
       "areas": [
        "FA6eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "mathematics",
@@ -12783,7 +12854,8 @@
         "EN.661.110"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab",
@@ -12793,14 +12865,16 @@
       "areas": [
        "FA1.1eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication",
      "name": "FA1 WRITING AND COMMUNICATION",
      "courses": [
       "EN.661.250"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab-2",
@@ -12810,7 +12884,8 @@
       "areas": [
        "FA1.2eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning",
@@ -12822,7 +12897,8 @@
         "AS.110.106"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-2",
@@ -12834,7 +12910,8 @@
         "AS.110.107"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-one-co",
@@ -12847,7 +12924,8 @@
         "EN.553.311"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-two-se",
@@ -12860,7 +12938,8 @@
         "EN.553.421"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-two-se-2",
@@ -12875,14 +12954,16 @@
         "EN.553.431"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-3",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "EN.601.220"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple",
@@ -12925,7 +13006,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa3-creative-expression-en-foundational-ability-",
@@ -12935,7 +13017,8 @@
       "areas": [
        "FA3"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa4-engagement-with-society-en-foundational-abil",
@@ -12945,7 +13028,8 @@
       "areas": [
        "FA4"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection-complete-one-from-the-fol",
@@ -12959,7 +13043,8 @@
         "EN.601.164"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection-en-foundational-ability-t",
@@ -12969,7 +13054,8 @@
       "areas": [
        "FA5eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa6-conceiving-of-and-realizing-projects-en-foun",
@@ -12979,7 +13065,8 @@
       "areas": [
        "FA6eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "mathematics-probability-statistics-course-s-see-",
@@ -14149,7 +14236,8 @@
         "EN.661.110"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab",
@@ -14159,14 +14247,16 @@
       "areas": [
        "FA1.1eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication",
      "name": "FA1 WRITING AND COMMUNICATION",
      "courses": [
       "EN.661.250"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab-2",
@@ -14176,28 +14266,32 @@
       "areas": [
        "FA1.2eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.108"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-2",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.109"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-3",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "EN.553.311"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple",
@@ -14210,7 +14304,8 @@
         "EN.500.112"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple-2",
@@ -14237,7 +14332,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa3-creative-expression-en-foundational-ability-",
@@ -14247,7 +14343,8 @@
       "areas": [
        "FA3"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa4-engagement-with-society-en-foundational-abil",
@@ -14257,7 +14354,8 @@
       "areas": [
        "FA4"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection-complete-one-from-the-fol",
@@ -14272,7 +14370,8 @@
         "EN.661.315"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection-en-foundational-ability-t",
@@ -14282,7 +14381,8 @@
       "areas": [
        "FA5eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa6-conceiving-of-and-realizing-projects-en-foun",
@@ -14292,7 +14392,8 @@
       "areas": [
        "FA6eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "mathematics",
@@ -14740,7 +14841,8 @@
         "AS.004.101"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab",
@@ -14750,14 +14852,16 @@
       "areas": [
        "FA1.1eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication",
      "name": "FA1 WRITING AND COMMUNICATION",
      "courses": [
       "EN.661.250"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab-2",
@@ -14767,28 +14871,32 @@
       "areas": [
        "FA1.2eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.108"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-2",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.109"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-3",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "EN.553.311"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple",
@@ -14801,7 +14909,8 @@
         "EN.500.112"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple-2",
@@ -14820,7 +14929,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa3-creative-expression-en-foundational-ability-",
@@ -14830,7 +14940,8 @@
       "areas": [
        "FA3"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa4-engagement-with-society-en-foundational-abil",
@@ -14840,14 +14951,16 @@
       "areas": [
        "FA4"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection",
      "name": "FA5 ETHICAL REFLECTION",
      "courses": [
       "EN.661.110"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection-en-foundational-ability-t",
@@ -14857,7 +14970,8 @@
       "areas": [
        "FA5eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa6-conceiving-of-and-realizing-projects-en-foun",
@@ -14867,7 +14981,8 @@
       "areas": [
        "FA6"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "mathematics-mathematics-elective-with-quantitati",
@@ -15621,7 +15736,8 @@
         "EN.661.110"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab",
@@ -15631,14 +15747,16 @@
       "areas": [
        "FA1.1eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication",
      "name": "FA1 WRITING AND COMMUNICATION",
      "courses": [
       "EN.661.250"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab-2",
@@ -15648,28 +15766,32 @@
       "areas": [
        "FA1.2eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.108"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-2",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.109"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-3",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "EN.553.311"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple",
@@ -15682,7 +15804,8 @@
         "EN.500.112"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple-2",
@@ -15709,7 +15832,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa3-creative-expression-en-foundational-ability-",
@@ -15719,7 +15843,8 @@
       "areas": [
        "FA3"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa4-engagement-with-society-en-foundational-abil",
@@ -15729,7 +15854,8 @@
       "areas": [
        "FA4"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection-en-foundational-ability-t",
@@ -15739,7 +15865,8 @@
       "areas": [
        "FA5"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection-en-foundational-ability-t-2",
@@ -15749,7 +15876,8 @@
       "areas": [
        "FA5eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa6-conceiving-of-and-realizing-projects-en-foun",
@@ -15759,7 +15887,8 @@
       "areas": [
        "FA6eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "mathematics",
@@ -17079,7 +17208,8 @@
         "EN.661.110"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab",
@@ -17089,14 +17219,16 @@
       "areas": [
        "FA1.1eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication",
      "name": "FA1 WRITING AND COMMUNICATION",
      "courses": [
       "EN.661.250"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab-2",
@@ -17106,7 +17238,8 @@
       "areas": [
        "FA1.2eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning",
@@ -17118,7 +17251,8 @@
         "AS.110.106"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-2",
@@ -17130,7 +17264,8 @@
         "AS.110.107"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-one-co",
@@ -17143,7 +17278,8 @@
         "EN.553.311"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-two-se",
@@ -17162,7 +17298,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple",
@@ -17176,7 +17313,8 @@
         "EN.601.220"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple-2",
@@ -17219,7 +17357,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa3-creative-expression-en-foundational-ability-",
@@ -17229,7 +17368,8 @@
       "areas": [
        "FA3"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa4-engagement-with-society-en-foundational-abil",
@@ -17239,7 +17379,8 @@
       "areas": [
        "FA4"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection-en-foundational-ability-t",
@@ -17249,7 +17390,8 @@
       "areas": [
        "FA5"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection-en-foundational-ability-t-2",
@@ -17259,7 +17401,8 @@
       "areas": [
        "FA5eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa6-conceiving-of-and-realizing-projects-en-foun",
@@ -17269,7 +17412,8 @@
       "areas": [
        "FA6eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "mathematics-one-probability-and-statistics-cours",
@@ -18850,7 +18994,8 @@
         "EN.661.110"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab",
@@ -18860,14 +19005,16 @@
       "areas": [
        "FA1.1eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication",
      "name": "FA1 WRITING AND COMMUNICATION",
      "courses": [
       "EN.661.250"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab-2",
@@ -18877,28 +19024,32 @@
       "areas": [
        "FA1.2eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.108"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-2",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.109"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-3",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "EN.553.311"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple",
@@ -18914,7 +19065,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple-2",
@@ -18949,7 +19101,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa3-creative-expression-en-foundational-ability-",
@@ -18959,7 +19112,8 @@
       "areas": [
        "FA3"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa4-engagement-with-society-en-foundational-abil",
@@ -18969,14 +19123,16 @@
       "areas": [
        "FA4"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection",
      "name": "FA5 ETHICAL REFLECTION",
      "courses": [
       "EN.660.463"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection-courses-with-en-foundatio",
@@ -18986,7 +19142,8 @@
       "areas": [
        "FA5eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa6-conceiving-of-and-realizing-projects-courses",
@@ -18996,7 +19153,8 @@
       "areas": [
        "FA6eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "mathematics",
@@ -19768,7 +19926,8 @@
         "EN.661.110"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab",
@@ -19778,14 +19937,16 @@
       "areas": [
        "FA1.1eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication",
      "name": "FA1 WRITING AND COMMUNICATION",
      "courses": [
       "EN.661.250"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab-2",
@@ -19795,28 +19956,32 @@
       "areas": [
        "FA1.2eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.108"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-2",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.109"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-3",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "EN.553.311"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple",
@@ -19829,7 +19994,8 @@
         "EN.500.112"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-choose",
@@ -19848,7 +20014,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa3-creative-expression-en-foundational-ability-",
@@ -19858,7 +20025,8 @@
       "areas": [
        "FA3"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa4-engagement-with-society-en-foundational-abil",
@@ -19868,14 +20036,16 @@
       "areas": [
        "FA4"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection",
      "name": "FA5 ETHICAL REFLECTION",
      "courses": [
       "EN.660.463"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection-en-foundational-ability-t",
@@ -19885,7 +20055,8 @@
       "areas": [
        "FA5eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa6-conceiving-of-and-realizing-projects-en-foun",
@@ -19895,7 +20066,8 @@
       "areas": [
        "FA6eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "mathematics",
@@ -23867,7 +24039,8 @@
         "EN.661.110"
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication-en-foundational-ab",
@@ -23877,35 +24050,40 @@
       "areas": [
        "FA1.1eP"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa1-writing-and-communication",
      "name": "FA1 WRITING AND COMMUNICATION",
      "courses": [
       "EN.661.250"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.108"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-2",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "AS.110.109"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-3",
      "name": "FA2 SCIENTIFIC AND QUANTITATIVE REASONING",
      "courses": [
       "EN.560.240"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple",
@@ -23924,7 +24102,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa2-scientific-and-quantitative-reasoning-comple-2",
@@ -23947,7 +24126,8 @@
         ]
        ]
       }
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "fa3-creative-expression-en-foundational-ability-",
@@ -23957,7 +24137,8 @@
       "areas": [
        "FA3"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa4-engagement-with-society-en-foundational-abil",
@@ -23967,14 +24148,16 @@
       "areas": [
        "FA4"
       ]
-     }
+     },
+     "shared": true
     },
     {
      "id": "fa5-ethical-reflection",
      "name": "FA5 ETHICAL REFLECTION",
      "courses": [
       "EN.660.463"
-     ]
+     ],
+     "shared": true
     },
     {
      "id": "mathematics",

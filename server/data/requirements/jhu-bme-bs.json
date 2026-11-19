@@ -3,7 +3,7 @@
   "school": "jhu",
   "name": "JHU Biomedical Engineering B.S.",
   "source": "https://e-catalogue.jhu.edu/engineering/full-time-residential-programs/degree-programs/biomedical-engineering/biomedical-engineering-bachelor-science/",
-  "note": "Unofficial — verify with your advisor. Transcribed Nov 2026 from the e-catalogue page for students entering Fall 2026. Not modelled: grade minimums, ePortfolio assignments (FA1.1eP, FA1.2eP, FA5eP, FA6eP — carried by the Core Electives and Design Sequence), and Career Exploration in BME (0 credits). Courses the catalogue double-counts toward FA2/FA5 (Calculus, Probability & Statistics, Gateway Computing, one science + lab, EN.580.111) are listed once, under Mathematics / Basic Sciences / BME Core.",
+  "note": "Unofficial — verify with your advisor. Transcribed Nov 2026 from the e-catalogue page for students entering Fall 2026. Not modelled: grade minimums, the ePortfolio assessments themselves (a course only offers the assignment), and Career Exploration in BME (0 credits). The FA groups count courses that also count toward the major (Calculus, Probability & Statistics, Gateway Computing, one science + lab, EN.580.111), as the catalogue does. The catalogue says the Design Sequence courses carry FA1.2eP (I) and FA5eP + FA6eP (II), but SIS does not tag them, so their codes are listed with the tags.",
   "totalCredits": 129,
   "groups": [
     {
@@ -11,14 +11,13 @@
       "name": "Design Cornerstone",
       "courses": ["EN.501.124"]
     },
-    {
-      "id": "fa1",
-      "name": "FA1 Writing and Communication",
-      "courses": [
-        { "label": "Foundational writing course", "oneOf": ["AS.004.101", "EN.661.110"] },
-        "EN.661.250"
-      ]
-    },
+    {"id": "fa1", "name": "FA1 Writing and Communication", "courses": [{"label": "Foundational writing course", "oneOf": ["AS.004.101", "EN.661.110"]}, "EN.661.250"]},
+    {"id": "fa1-eportfolio-writing", "name": "FA1 writing ePortfolio: a course tagged FA1.1eP", "shared": true, "count": 1, "match": {"areas": ["FA1.1eP"]}},
+    {"id": "fa1-eportfolio-oral", "name": "FA1 oral communication ePortfolio: a course tagged FA1.2eP", "shared": true, "count": 1, "note": "Every Design Sequence I course carries it.", "match": {"areas": ["FA1.2eP"], "codes": ["EN.580.311", "EN.580.411", "EN.580.437", "EN.580.471", "EN.580.480", "EN.530.403", "EN.660.345"]}},
+    {"id": "fa2", "name": "FA2 Scientific and Quantitative Reasoning", "shared": true, "courses": ["AS.110.108", "AS.110.109", {"label": "Probability and Statistics", "oneOf": ["EN.553.311", "EN.553.433", ["EN.553.420", "EN.553.430"], ["EN.553.421", "EN.553.431"], ["EN.553.420", "EN.553.413"], ["EN.553.421", "EN.553.413"]]}, {"label": "Gateway Computing", "oneOf": ["EN.500.113", "EN.500.112"]}, {"label": "One natural science course with its lab", "oneOf": [["AS.030.101", "AS.030.105"], ["AS.030.102", "AS.030.106"], ["AS.171.101", "AS.173.111"], ["AS.171.102", "AS.173.112"], ["AS.171.107", "AS.173.111"], ["AS.171.108", "AS.173.112"]]}]},
+    {"id": "fa5", "name": "FA5 Ethical Reflection", "shared": true, "courses": ["EN.580.111"]},
+    {"id": "fa5-eportfolio", "name": "FA5 ethical reflection ePortfolio: a course tagged FA5eP", "shared": true, "count": 1, "note": "Every Design Sequence II course carries it.", "match": {"areas": ["FA5eP"], "codes": ["EN.580.312", "EN.580.412", "EN.580.438", "EN.580.472", "EN.580.481", "EN.530.404", "EN.660.346"]}},
+    {"id": "fa6", "name": "FA6 Conceiving of and Realizing Projects: two courses tagged FA6eP", "shared": true, "count": 2, "note": "Every BME Core Elective carries one (Project 1), and every Design Sequence II course another (Project 2).", "match": {"areas": ["FA6eP"], "codes": ["EN.580.312", "EN.580.412", "EN.580.438", "EN.580.472", "EN.580.481", "EN.530.404", "EN.660.346"]}},
     {
       "id": "math",
       "name": "Mathematics (min. 20 credits)",

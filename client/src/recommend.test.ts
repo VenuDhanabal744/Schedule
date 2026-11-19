@@ -63,7 +63,42 @@ describe('recommend', () => {
     expect(suggested[0].course.code).toBe('AS.110.101');
     expect(suggested[0].reasons).toContain('Prerequisite for AS.110.102');
     expect(suggested.reduce((n, r) => n + r.credits, 0)).toBeLessThanOrEqual(12);
-    expect(codes(suggested)).toEqual(['AS.110.101', 'AS.171.101', 'AS.010.101']);
+    // the 4-credit arts course moves the 6-credit Arts group further than the 3-credit one
+    expect(codes(suggested)).toEqual(['AS.110.101', 'AS.171.101', 'AS.010.102']);
+  });
+
+  it('says exactly what each course and the set move, by the same matcher as the Requirements tab', () => {
+    const plan: Plan = { ...defaultPlan(), maxCredits: 12, terms: { 'Prior credit': [item('old', { code: 'AS.030.101', status: 'completed' })] } };
+    const { suggested, more, setGains, total } = run(plan, 'Fall 2026', { templates: [{ ...template, totalCredits: 120 }] });
+    // Core already has AS.030.101's slot: 1 of 7
+    expect(suggested[0].gains).toEqual([{ name: 'Core', unit: 'courses', need: 7, from: 1, to: 2 }]);
+    expect(more.find((r) => r.course.code === 'AS.010.101')!.gains).toEqual([
+      { name: 'Arts', unit: 'credits', need: 6, from: 0, to: 3 },
+    ]);
+    expect(setGains).toEqual([
+      { name: 'Core', unit: 'courses', need: 7, from: 1, to: 3 },
+      { name: 'Arts', unit: 'credits', need: 6, from: 0, to: 4 },
+    ]);
+    expect(total).toEqual({ from: 3, to: 13, need: 120 });
+  });
+
+  it('counts a course toward a shared group too (an FA that double-counts with the major)', () => {
+    const fa: ReqTemplate = {
+      ...template,
+      groups: [
+        { id: 'fa2', name: 'FA2', shared: true, courses: ['AS.110.101'] },
+        { id: 'math', name: 'Math', courses: ['AS.110.101'] },
+      ],
+    };
+    const { suggested } = run(defaultPlan(), 'Fall 2026', { templates: [fa] });
+    expect(suggested[0].gains.map((g) => g.name)).toEqual(['FA2', 'Math']);
+  });
+
+  it('leaves out a course the matcher would count nowhere new', () => {
+    // two options for one slot: once one is planned, the other moves nothing
+    const one: ReqTemplate = { ...template, groups: [{ id: 'g', name: 'G', courses: [{ oneOf: ['AS.110.101', 'AS.171.101'] }] }] };
+    const plan: Plan = { ...defaultPlan(), terms: { 'Fall 2026': [item('a', { code: 'AS.110.101' })] } };
+    expect(run(plan, 'Fall 2026', { templates: [one] }).more).toEqual([]);
   });
 
   it('takes earlier terms into account and skips what is already planned or barred', () => {
@@ -91,7 +126,7 @@ describe('recommend', () => {
     // AS.010.102 is 4 credits: replacing the 3-credit placeholder would go over the cap
     expect(codes(suggested)).toEqual(['AS.010.101']);
     expect(suggested[0].replaces).toBe(fa3);
-    expect(suggested[0].reasons).toEqual(['Fills “Course tagged FA3”']);
+    expect(suggested[0].reasons).toEqual(['Takes the place of “Course tagged FA3”']);
   });
 
   it('a course that fills a required slot is added, not swapped for a placeholder', () => {
@@ -109,6 +144,12 @@ describe('recommend', () => {
   });
 
   it('suggests nothing when there is nothing to fill', () => {
-    expect(run(defaultPlan(), 'Fall 2026', { templates: [] })).toEqual({ suggested: [], more: [], room: 18 });
+    expect(run(defaultPlan(), 'Fall 2026', { templates: [] })).toEqual({
+      suggested: [],
+      more: [],
+      room: 18,
+      setGains: [],
+      total: { from: 0, to: 0, need: undefined },
+    });
   });
 });

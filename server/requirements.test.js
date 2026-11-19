@@ -91,6 +91,17 @@ test('parseProgramPage reads the Requirements tab and names the template', () =>
   assert.deepEqual(t.groups.map((g) => [g.name, g.courses]), [['Core', ['BIOL 101']]]);
 });
 
+test('Foundational Ability groups share their courses with the major', () => {
+  const groups = buildGroups([
+    { heading: 'FA2 SCIENTIFIC AND QUANTITATIVE REASONING', rows: parseRows(table(course('AS.110.108'))) },
+    { heading: 'MATHEMATICS', rows: parseRows(table(course('AS.110.108'))) },
+  ]);
+  assert.deepEqual(groups.map((g) => [g.name, !!g.shared]), [
+    ['FA2 SCIENTIFIC AND QUANTITATIVE REASONING', true],
+    ['MATHEMATICS', false],
+  ]);
+});
+
 test('a page without course lists still gets a placeholder group', () => {
   const t = parseProgramPage('<h1>X</h1><div id="textcontainer"><p>Not offered.</p></div>', 'https://c.edu/x/', 'jhu');
   assert.deepEqual(t.groups.map((g) => [g.id, g.todo]), [['major-courses', true]]);

@@ -3,23 +3,25 @@ import { catalogTerm, itemCodes, offeringPattern, reqItems, termCredits, termOrd
 import type { Plan, PlanItem } from './plan';
 import { courseReqs, credited, parsePrereqText, reqCodes, unmet } from './prereqs';
 import { matchRequirements, slotOptions } from './requirements';
+import type { GroupProgress } from './requirements';
 import { matchingCourses } from './autoplan';
 
-// Something the student still needs: a required course, a few credits of a
-// requirement group, or a placeholder card in the term being planned.
+// Something the student still needs: a required course, a requirement group,
+// or a placeholder card in the term being planned.
 type Need = {
-  label: string;
-  weight: number; // a required course counts most, a placeholder next, a broad group least
-  left: number; // how many more courses (or credits, when `credits`) it takes
-  credits?: boolean;
+  required: boolean; // a slot of a checklist group
   codes: Set<string>;
   replaces?: PlanItem; // the placeholder a course for this need takes the place of
 };
 
+// What a course (or a set of them) moves: one requirement group's progress.
+export type Gain = { name: string; unit: 'courses' | 'credits'; need: number; from: number; to: number };
+
 export type Recommendation = {
   course: IndexCourse;
   credits: number;
-  reasons: string[];
+  gains: Gain[];
+  reasons: string[]; // the placeholder it replaces, the required courses it unlocks
   score: number;
   replaces?: PlanItem;
 };
@@ -38,7 +40,13 @@ export function recommend(o: {
   templates: ReqTemplate[]; // the student's majors, hidden groups removed
   slotMatch: (it: PlanItem) => ReqMatch | null | undefined; // what fills a placeholder
   rating?: (c: IndexCourse) => number | null;
-}): { suggested: Recommendation[]; more: Recommendation[]; room: number } {
+}): {
+  suggested: Recommendation[];
+  more: Recommendation[];
+  room: number;
+  setGains: Gain[]; // what the suggested set moves, together
+  total: { from: number; to: number; need?: number }; // degree credits, before and with the set
+} {
   const { plan, term, index, imported } = o;
   const order = termOrder(term);
   const terms = termSequence(plan);
@@ -49,35 +57,66 @@ export function recommend(o: {
   const ruledOut = credited(codesIn(terms), index);
 
   // ---- what the student still needs ----
+  // requirement progress of a plan, by template and group
+  const progressOf = (p: Plan) => {
+    const items = reqItems(p, index);
+    return new Map<string, GroupProgress>(
+      o.templates.flatMap((t) =>
+        matchRequirements(t, items, p.assign[t.id])
+          .filter((g) => !g.group.todo)
+          .map((g) => [`${t.id} ${g.group.id}`, g] as const)
+      )
+    );
+  };
+  const base = progressOf(plan);
+
   const needs: Need[] = [];
-  const items = reqItems(plan, index);
   const undergrad = (m: ReqMatch) => matchingCourses(m, index).filter((c) => UNDERGRAD.test(c.level)).map((c) => c.code);
-  for (const t of o.templates) {
-    for (const p of matchRequirements(t, items, plan.assign[t.id])) {
-      if (p.group.todo || p.have >= p.need) continue;
-      p.slots?.forEach((s, i) => {
-        if (s.itemIds) return;
-        const codes = new Set(slotOptions(p.group.courses![i]).flat());
-        needs.push({ label: `Required: ${s.label} (${p.group.name})`, weight: 3, left: 1, codes });
-      });
-      if (!p.slots && p.group.match) {
-        needs.push({
-          label: `Counts toward ${p.group.name}`,
-          weight: 1,
-          left: p.need - p.have,
-          credits: p.unit === 'credits',
-          codes: new Set(undergrad(p.group.match)),
-        });
-      }
-    }
+  for (const p of base.values()) {
+    if (p.have >= p.need) continue;
+    p.slots?.forEach((s, i) => {
+      if (!s.itemIds) needs.push({ required: true, codes: new Set(slotOptions(p.group.courses![i]).flat()) });
+    });
+    if (!p.slots && p.group.match) needs.push({ required: false, codes: new Set(undergrad(p.group.match)) });
   }
   for (const it of plan.terms[term] ?? []) {
     const m = it.status === 'planned' ? o.slotMatch(it) : undefined;
-    if (m) needs.push({ label: `Fills “${it.title}”`, weight: 2, left: 1, codes: new Set(undergrad(m)), replaces: it });
+    if (m) needs.push({ required: false, codes: new Set(undergrad(m)), replaces: it });
   }
 
+  // the plan with these courses taken in `term`; one for a placeholder takes its place (and id)
+  const withCourses = (rs: Recommendation[]): Plan => {
+    let items = [...(plan.terms[term] ?? [])];
+    for (const r of rs) {
+      const it: PlanItem = {
+        id: r.replaces?.id ?? `rec-${r.course.code}`,
+        code: r.course.code,
+        title: r.course.title,
+        credits: r.credits,
+        status: 'planned',
+      };
+      items = r.replaces ? items.map((x) => (x.id === it.id ? it : x)) : [...items, it];
+    }
+    return { ...plan, terms: { ...plan.terms, [term]: items } };
+  };
+  // groups whose progress toward their goal moves between two plans
+  const gainsBetween = (from: Map<string, GroupProgress>, to: Map<string, GroupProgress>) =>
+    [...to].flatMap(([key, g]) => {
+      const was = from.get(key)!.have;
+      return Math.min(g.have, g.need) > Math.min(was, g.need)
+        ? [{ name: g.group.name, unit: g.unit, need: g.need, from: was, to: g.have, required: !!g.slots }]
+        : [];
+    });
+  // a required course counts most, a placeholder filled next, a broad group least (per 3 credits)
+  const worth = (gains: ReturnType<typeof gainsBetween>, rs: Recommendation[]) =>
+    gains.reduce(
+      (s, g) => s + (g.required ? 3 : 1) * ((Math.min(g.to, g.need) - Math.min(g.from, g.need)) / (g.unit === 'credits' ? 3 : 1)),
+      0
+    ) + 2 * new Set(rs.flatMap((r) => (r.replaces ? [r.replaces.id] : []))).size;
+  const asGain = ({ required: _r, ...g }: ReturnType<typeof gainsBetween>[number]): Gain => g;
+
   // required courses not yet planned: taking one of their prerequisites unlocks them
-  const required = new Set(needs.filter((n) => n.weight === 3).flatMap((n) => [...n.codes]));
+  const required = new Set(needs.filter((n) => n.required).flatMap((n) => [...n.codes]));
   const unlocks = (code: string) =>
     [...required].filter((r) =>
       courseReqs(index.get(r)).some((q) => !q.coreq && reqCodes(q.tree).includes(code))
@@ -98,53 +137,59 @@ export function recommend(o: {
   const ready = (c: IndexCourse) =>
     [...courseReqs(c), ...background(c)].every((r) => !unmet(r.tree, r.concurrent ? now : past, (x) => index.has(x)));
 
-  const scored: (Recommendation & { needs: Need[] })[] = [];
+  const scored: Recommendation[] = [];
   for (const code of new Set(needs.flatMap((n) => [...n.codes]))) {
     const c = index.get(code);
     if (!c || ruledOut.has(code) || !offered(c) || !ready(c)) continue;
     // a course counts toward one requirement: one that fills a required slot
     // can't also stand in for a placeholder (which would then reopen)
-    const all = needs.filter((n) => n.codes.has(code));
-    const fills = all.some((n) => n.weight === 3) ? all.filter((n) => !n.replaces) : all;
-    if (!fills.length) continue;
+    const fills = needs.filter((n) => n.codes.has(code));
+    const replaces = fills.some((n) => n.required) ? undefined : fills.find((n) => n.replaces)?.replaces;
+    const r: Recommendation = { course: c, credits: parseFloat(c.credits) || 0, gains: [], reasons: [], score: 0, replaces };
+    const gains = gainsBetween(base, progressOf(withCourses([r])));
     const opens = unlocks(code);
-    scored.push({
-      course: c,
-      credits: parseFloat(c.credits) || 0,
-      needs: fills,
-      replaces: fills.find((n) => n.replaces)?.replaces,
-      score: fills.reduce((s, n) => s + n.weight, 0) + 0.5 * opens.length,
-      reasons: [
-        ...fills.map((n) => n.label),
-        ...(opens.length ? [`Prerequisite for ${opens.slice(0, 3).join(', ')}${opens.length > 3 ? '…' : ''}`] : []),
-      ],
-    });
+    r.score = worth(gains, [r]) + 0.5 * opens.length;
+    if (!r.score) continue; // the matcher would count it nowhere new
+    r.gains = gains.map(asGain);
+    r.reasons = [
+      ...(replaces ? [`Takes the place of “${replaces.title}”`] : []),
+      ...(opens.length ? [`Prerequisite for ${opens.slice(0, 3).join(', ')}${opens.length > 3 ? '…' : ''}`] : []),
+    ];
+    scored.push(r);
   }
   const rate = (r: Recommendation) => o.rating?.(r.course) ?? 0;
   scored.sort((a, b) => b.score - a.score || rate(b) - rate(a) || a.course.code.localeCompare(b.course.code));
 
-  // ---- a set that fits: best first, each filling a need not yet covered ----
-  const left = new Map(needs.map((n) => [n, n.left]));
-  const open = (r: (typeof scored)[number]) => r.needs.filter((n) => left.get(n)! > 0);
+  // ---- a set that fits: each step adds the course that moves progress most
+  // on top of the ones already picked, so two that fill the same slot aren't both taken
   const room = plan.maxCredits - termCredits(plan.terms[term]);
+  const cost = (r: Recommendation) => r.credits - (r.replaces?.credits ?? 0);
+  const pool = scored.slice(0, 40); // shortcut: the best 40 alone; enough for one semester's picks
+  const suggested: Recommendation[] = [];
   let free = room;
-  const suggested: typeof scored = [];
+  let current = base;
   for (;;) {
-    const cost = (r: (typeof scored)[number]) => r.credits - (r.replaces?.credits ?? 0);
-    const value = (r: (typeof scored)[number]) => open(r).reduce((s, n) => s + n.weight, 0);
-    const next = scored
-      .filter((r) => !suggested.includes(r) && value(r) > 0 && cost(r) <= free)
-      .filter((r) => !r.replaces || !suggested.some((s) => s.replaces === r.replaces))
-      .sort((a, b) => value(b) - value(a) || b.score - a.score)[0];
-    if (!next) break;
-    suggested.push(next);
-    free -= cost(next);
-    for (const n of open(next)) left.set(n, left.get(n)! - (n.credits ? next.credits : 1));
+    let best: { r: Recommendation; value: number; after: Map<string, GroupProgress> } | undefined;
+    for (const r of pool) {
+      if (suggested.includes(r) || cost(r) > free) continue;
+      if (r.replaces && suggested.some((s) => s.replaces === r.replaces)) continue;
+      const after = progressOf(withCourses([...suggested, r]));
+      const value = worth(gainsBetween(current, after), [r]);
+      if (value > 0 && (!best || value > best.value)) best = { r, value, after };
+    }
+    if (!best) break;
+    suggested.push(best.r);
+    free -= cost(best.r);
+    current = best.after;
   }
-  const strip = ({ needs: _needs, ...r }: (typeof scored)[number]): Recommendation => r;
+
+  const planned = (p: Plan) => Object.values(p.terms).reduce((n, items) => n + termCredits(items), 0);
+  const need = Math.max(0, ...o.templates.map((t) => t.totalCredits ?? 0)) || undefined;
   return {
-    suggested: suggested.map(strip),
-    more: scored.filter((r) => !suggested.includes(r)).map(strip),
+    suggested,
+    more: scored.filter((r) => !suggested.includes(r)),
     room,
+    setGains: gainsBetween(base, current).map(asGain),
+    total: { from: planned(plan), to: planned(withCourses(suggested)), need },
   };
 }

@@ -151,7 +151,10 @@ export function buildGroups(tables) {
     let id = slug(g.name);
     for (let i = 2; ids.has(id); i++) id = `${slug(g.name)}-${i}`;
     ids.add(id);
-    groups.push({ id, ...g, name: g.name.slice(0, 140) });
+    // a Foundational Ability counts courses that also count toward the major
+    // ("Calculus I applies to both the FA2 requirement and Mathematics")
+    const shared = /^FA\d\b/.test(g.name) ? { shared: true } : {};
+    groups.push({ id, ...g, ...shared, name: g.name.slice(0, 140) });
   };
   // a menu of courses: "pick N of these" (or an unknown N, flagged TODO)
   const menu = (name, need, codes) =>
