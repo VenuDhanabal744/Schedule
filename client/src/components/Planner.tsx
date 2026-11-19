@@ -29,8 +29,8 @@ import {
   termSequence,
 } from '../plan';
 import type { Plan, PlanItem, PlanStatus, Warning } from '../plan';
-import type { Recommendation } from '../recommend';
-import { matchRequirements } from '../requirements';
+import type { Gain, Recommendation } from '../recommend';
+import { matchRequirements, slotOptions } from '../requirements';
 import type { GroupProgress } from '../requirements';
 import { samplePlans, sampleFor } from '../samplePlans';
 import { AutoPlan } from './AutoPlan';
@@ -41,6 +41,35 @@ import { recommend } from '../recommend';
 import { useRatings } from '../useRatings';
 
 type Drag = { kind: 'item'; id: string; label: string } | { kind: 'new'; code: string; label: string };
+
+// JHU's Foundational Abilities, as the e-catalogue names them
+const FA_NAMES = [
+  '',
+  'Writing and Communication',
+  'Scientific and Quantitative Reasoning',
+  'Creative Expression',
+  'Engagement with Society',
+  'Ethical Reflection',
+  'Conceiving of and Realizing Projects',
+];
+// the FAs a requirement group belongs to: "FA3 Creative Expression + FA4 …" -> [3, 4]
+const faOf = (name: string) => [...new Set([...name.matchAll(/\bFA(\d)\b/g)].map((m) => +m[1]))];
+
+// "Mathematics: 2 → 3 of 5", "FA3 + FA4: 0 → 3 of 12 cr"; no goal: "34 → 37 cr"
+function GainRow({ g }: { g: Omit<Gain, 'need'> & { need?: number } }) {
+  const met = !!g.need && g.to >= g.need;
+  return (
+    <div className="rec-gain" title={g.name}>
+      <span>{g.name}</span>
+      <span className={met ? 'rec-done' : undefined}>
+        {g.from} → {g.to}
+        {g.need ? ` of ${g.need}` : ''}
+        {g.unit === 'credits' ? ' cr' : ''}
+        {met ? ' ✓' : ''}
+      </span>
+    </div>
+  );
+}
 
 const STATUS_LABEL: Record<PlanStatus, string> = {
   planned: 'Planned',
@@ -390,6 +419,7 @@ export function Planner({
   const [reqQuery, setReqQuery] = useState('');
   const [autoOpen, setAutoOpen] = useState(false);
   const [slotCard, setSlotCard] = useState<{ term: string; id: string } | null>(null);
+  const [faFilter, setFaFilter] = useState<number | null>(null); // Recommended tab: courses for one FA
 
   useEffect(() => {
     fetchPlannerData(school).then(setData, (e) => setError(e.message));
@@ -613,7 +643,37 @@ export function Planner({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- activeTemplates and slotOf are rebuilt each render from plan + loaded
     [tab, data, recTerm, plan, loaded, index, imported]
   );
-  const shownRecs = recs ? [...recs.suggested, ...recs.more.slice(0, 30)] : [];
+  // Foundational Abilities: the requirement groups named for one, and what each still needs
+  const faProgress =
+    tab === 'rec'
+      ? activeTemplates
+          .flatMap((t) => matchRequirements(t, items, plan.assign[t.id]))
+          .filter((p) => !p.group.todo && faOf(p.group.name).length)
+      : [];
+  const fas = [1, 2, 3, 4, 5, 6].flatMap((n) => {
+    const groups = faProgress.filter((p) => faOf(p.group.name).includes(n));
+    if (!groups.length) return [];
+    const open = groups.filter((p) => p.have < p.need);
+    const missing = open.flatMap((p) =>
+      p.slots
+        ? p.slots.flatMap((s, i) => {
+            if (s.itemIds) return [];
+            const slot = p.group.courses![i];
+            // "Complete one from the following:" says nothing; list the options instead
+            const label = typeof slot === 'object' && slot.label && !/:\s*$/.test(slot.label) ? slot.label : null;
+            // a single course reads better with its title: "EN.661.250 Oral Presentations"
+            const course = typeof slot === 'string' ? index.get(slot) : undefined;
+            return [label ?? (course ? `${slot} ${course.title}` : slotOptions(slot).map((o) => o.join(' + ')).join(' or '))];
+          })
+        : [p.unit === 'credits' ? `${p.need - p.have} more cr: ${p.group.name}` : p.group.name]
+    );
+    return [{ n, missing, done: groups.every((p) => p.done >= p.need) }];
+  });
+  const faRecs =
+    recs && faFilter !== null
+      ? [...recs.suggested, ...recs.more].filter((r) => r.gains.some((g) => faOf(g.name).includes(faFilter)))
+      : null;
+  const shownRecs = !recs ? [] : faRecs ? faRecs.slice(0, 30) : [...recs.suggested, ...recs.more.slice(0, 30)];
   useRatings(shownRecs.flatMap((r) => r.course.instructors ?? [])); // fetches them; re-renders when they land
   const addRec = (r: Recommendation) =>
     r.replaces ? pickCourse(recTerm!, r.replaces.id, r.course.code) : addCourse(recTerm!, r.course.code);
@@ -632,6 +692,20 @@ export function Planner({
         addLabel={r.replaces ? 'Use' : '+ Add'}
         extra={
           <div className="rec-why">
+            {r.gains.map((g, i) => (
+              <GainRow key={i} g={g} />
+            ))}
+            {recs && (
+              <GainRow
+                g={{
+                  name: 'Degree credits',
+                  unit: 'credits',
+                  need: recs.total.need,
+                  from: recs.total.from,
+                  to: recs.total.from + r.credits - (r.replaces?.credits ?? 0),
+                }}
+              />
+            )}
             {r.reasons.map((why) => (
               <div key={why}>{why}</div>
             ))}
@@ -690,23 +764,86 @@ export function Planner({
               </div>
               {recs && !recs.suggested.length && !recs.more.length && activeTemplates.length > 0 && (
                 <div className="more">
-                  Nothing to recommend for {recTerm}: your majors’ requirements are planned, or what’s left needs
-                  prerequisites first or isn’t offered then.
+                  Nothing to recommend for {recTerm}: what’s left in your majors is planned, needs prerequisites
+                  first, isn’t offered then, or is a TODO group the catalog page doesn’t list courses for (see the
+                  Requirements tab).
                 </div>
               )}
               <div className="results">
-                {recs && recs.suggested.length > 0 && (
-                  <div className="rec-head">
-                    Suggested for {recTerm} ({recs.suggested.reduce((n, r) => n + r.credits, 0)} cr)
-                    <button className="btn-add" onClick={() => recs.suggested.forEach(addRec)}>
-                      Add all
-                    </button>
+                {recs && (
+                  <div className="fa-panel">
+                    <div className="rec-head">Foundational Abilities</div>
+                    {!fas.length && (
+                      <div className="req-note">
+                        Your majors’ catalog pages don’t list FA requirements (Arts &amp; Sciences lists them
+                        school-wide), so they aren’t tracked here yet.
+                      </div>
+                    )}
+                    {fas.map(({ n, missing, done }) => (
+                      <button
+                        key={n}
+                        className={`fa-row${missing.length ? '' : ' met'}${faFilter === n ? ' active' : ''}`}
+                        aria-pressed={faFilter === n}
+                        disabled={!missing.length}
+                        onClick={() => setFaFilter(faFilter === n ? null : n)}
+                        title={missing.length ? `Show courses for FA${n} you can take in ${recTerm}` : undefined}
+                      >
+                        <strong>
+                          FA{n} {FA_NAMES[n]}
+                        </strong>
+                        <span>
+                          {missing.length ? `Needs: ${missing.join('; ')}` : done ? '✓ Done' : '✓ Planned'}
+                        </span>
+                      </button>
+                    ))}
                   </div>
                 )}
-                {recs?.suggested.map(recCard)}
-                {recs && recs.more.length > 0 && <div className="rec-head">Other options</div>}
-                {recs?.more.slice(0, 30).map(recCard)}
-                {recs && recs.more.length > 30 && <div className="more">Showing 30 of {recs.more.length} other options</div>}
+                {faRecs ? (
+                  <>
+                    <div className="rec-head">
+                      Courses for FA{faFilter} in {recTerm}
+                      <button className="btn-add" onClick={() => setFaFilter(null)}>
+                        Show all
+                      </button>
+                    </div>
+                    {!faRecs.length && (
+                      <div className="more">
+                        Nothing for FA{faFilter} you can take in {recTerm} (prerequisites first, or not offered then).
+                        Try another semester.
+                      </div>
+                    )}
+                    {faRecs.slice(0, 30).map(recCard)}
+                    {faRecs.length > 30 && <div className="more">Showing 30 of {faRecs.length}</div>}
+                  </>
+                ) : (
+                  <>
+                    {recs && recs.suggested.length > 0 && (
+                      <>
+                        <div className="rec-head">
+                          Suggested for {recTerm} ({recs.suggested.reduce((n, r) => n + r.credits, 0)} cr)
+                          <button className="btn-add" onClick={() => recs.suggested.forEach(addRec)}>
+                            Add all
+                          </button>
+                        </div>
+                        <div className="rec-set">
+                          <div className="rec-set-title">Together these move:</div>
+                          {recs.setGains.map((g, i) => (
+                            <GainRow key={i} g={g} />
+                          ))}
+                          <GainRow
+                            g={{ name: 'Degree credits', unit: 'credits', ...recs.total }}
+                          />
+                        </div>
+                      </>
+                    )}
+                    {recs?.suggested.map(recCard)}
+                    {recs && recs.more.length > 0 && <div className="rec-head">Other options</div>}
+                    {recs?.more.slice(0, 30).map(recCard)}
+                    {recs && recs.more.length > 30 && (
+                      <div className="more">Showing 30 of {recs.more.length} other options</div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           )}

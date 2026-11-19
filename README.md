@@ -163,10 +163,18 @@ Pre-Professional Advising pages named in their `source`; they are unofficial, an
   something you still need: an open requirement slot or group in your majors, or a
   placeholder card in that semester. It keeps only courses you can take then: not already
   planned or ruled out by one you have, prerequisites (and, at JHU, the catalog's
-  "Recommended Course Background") done in earlier terms, and offered that season. Ranked
-  by how much each fills, how many required courses it unlocks, then professor rating; the
-  suggested set fits your credit cap without filling one requirement twice. "Add all" adds
-  it; a course that fills a placeholder replaces it.
+  "Recommended Course Background") done in earlier terms, and offered that season. Each card
+  says exactly what the course moves, using the same matcher as the Requirements tab
+  ("Mathematics 3 → 4 of 5", "Degree credits 37 → 41 of 129"); courses that would count
+  nowhere new are left out. Ranked by that progress (required courses most), the required
+  courses each unlocks, then professor rating. The suggested set fits your credit cap, picks
+  each course for what it adds on top of the others, and shows what it moves together. "Add
+  all" adds it; a course that fills a placeholder replaces it.
+- **Foundational Abilities** (top of the Recommended tab) — FA1–FA6 with what each still
+  needs; click one to list courses for it that you can take in that semester. Read from the
+  major's catalog page, so it covers the engineering majors (whose pages list the FAs); FA
+  groups are `"shared": true`, since the catalog counts a course toward an FA and the major
+  at once. Arts & Sciences lists FAs school-wide, which isn't tracked yet.
 - **Order check and Mark done** — the planner checks every course's prerequisites and
   corequisites (a lecture and its lab must share a term) and says so above the grid. A
   course the registrar bars after one you hold counts as taken (AS.030.103 for AS.030.102).
