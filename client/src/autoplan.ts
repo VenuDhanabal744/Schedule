@@ -107,8 +107,36 @@ export const matchingCourses = (m: ReqMatch, index: Map<string, IndexCourse>): I
   );
 
 // Placed by the auto-planner and not yet under way: the next run replaces it.
-// A course the student adds or moves is theirs and is never touched.
-export const replaceable = (it: PlanItem) => !!it.auto && it.status === 'planned';
+// A course the student adds, or an auto-planned one they move, stays put.
+export const replaceable = (it: PlanItem) => !!it.auto && !it.pinned && it.status === 'planned';
+
+// A planned placeholder without `auto` or `fills` is left over from an earlier
+// version (any program's): the planner's own, not the student's.
+const stray = (it: PlanItem, samples: SamplePlan[]) =>
+  it.status === 'planned' && !it.fills && samples.some((s) => slotEntry(it, s));
+
+// Everything the auto-planner placed that isn't under way yet, moved or not:
+// what "Remove auto-planned" takes out. A placeholder carries `fills` even
+// after a drag that predates `pinned`.
+const autoPlaced = (it: PlanItem, samples: SamplePlan[]) =>
+  it.status === 'planned' && (!!it.auto || !!it.fills || stray(it, samples));
+
+export const hasAutoPlan = (plan: Plan) =>
+  Object.values(plan.terms).some((items) => items.some((it) => autoPlaced(it, Object.values(samplePlans))));
+
+// The plan without its auto-plan: keeps the student's own courses and whatever
+// is completed or in progress, and drops the removed cards' assignments.
+export function removeAutoPlan(plan: Plan): Plan {
+  const samples = Object.values(samplePlans);
+  const terms = Object.fromEntries(
+    Object.entries(plan.terms).map(([t, items]) => [t, items.filter((it) => !autoPlaced(it, samples))])
+  );
+  const ids = new Set(Object.values(terms).flatMap((items) => items.map((it) => it.id)));
+  const assign = Object.fromEntries(
+    Object.entries(plan.assign).map(([t, a]) => [t, Object.fromEntries(Object.entries(a).filter(([id]) => ids.has(id)))])
+  );
+  return { ...plan, autoPlan: undefined, terms, assign };
+}
 
 export type AutoPlanOptions = {
   plan: Plan;
@@ -132,12 +160,9 @@ export function autoPlan(o: AutoPlanOptions): {
 } {
   const { plan, sample, index, maxCredits } = o;
   const grid = (o.premed && sample.premed) || sample.standard;
-  // a planned placeholder without `auto` or `fills` is left over from an
-  // earlier version (any program's): the planner's own, not the student's
-  const stray = (it: PlanItem) =>
-    it.status === 'planned' && !it.fills && [sample, ...Object.values(samplePlans)].some((s) => slotEntry(it, s));
+  const samples = [sample, ...Object.values(samplePlans)];
   const kept = Object.fromEntries(
-    Object.entries(plan.terms).map(([t, items]) => [t, items.filter((it) => !replaceable(it) && !stray(it))])
+    Object.entries(plan.terms).map(([t, items]) => [t, items.filter((it) => !replaceable(it) && !stray(it, samples))])
   );
   const base: Plan = { ...plan, terms: kept, numTerms: o.semesterCount };
   const sems = semesters(plan, o.semesterCount);

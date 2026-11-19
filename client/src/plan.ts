@@ -17,6 +17,7 @@ export type PlanItem = {
   countsAs?: string[]; // course codes this stands in for (AP/transfer credit)
   repeatable?: boolean;
   auto?: boolean; // placed by the auto-planner; replaced when it runs again while still planned
+  pinned?: boolean; // an auto-planned card the student moved: re-planning leaves it there
   fills?: string; // a placeholder for this slot of the catalog's sample program (its label)
 };
 

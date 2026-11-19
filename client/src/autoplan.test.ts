@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { IndexCourse } from './types';
-import { autoPlan, matchingCourses, rankFocusAreas, semesters, slotEntry, slotMatch } from './autoplan';
+import { autoPlan, matchingCourses, rankFocusAreas, removeAutoPlan, semesters, slotEntry, slotMatch } from './autoplan';
 import { defaultPlan, planWarnings, termCredits } from './plan';
 import type { Plan, PlanItem } from './plan';
 import { samplePlans, sampleFor } from './samplePlans';
@@ -286,11 +286,11 @@ describe('what is the student’s and what is the planner’s', () => {
   it('leaves a moved placeholder and a finished auto-planned course where they are', () => {
     const once = run({ sample: generated, index, semesterCount: 2 }).plan;
     const free = once.terms['Spring 2027'].find((it) => it.fills === 'Free Elective')!;
-    // what the planner does on a drag (auto cleared) and on "Mark done" (auto kept)
+    // what the planner does on a drag (pinned) and on "Mark done" (completed)
     const moved: Plan = {
       ...once,
       terms: {
-        'Fall 2026': [...once.terms['Fall 2026'].map((it) => ({ ...it, status: 'completed' as const })), { ...free, auto: undefined }],
+        'Fall 2026': [...once.terms['Fall 2026'].map((it) => ({ ...it, status: 'completed' as const })), { ...free, pinned: true }],
         'Spring 2027': once.terms['Spring 2027'].filter((it) => it !== free),
       },
     };
@@ -316,6 +316,38 @@ describe('what is the student’s and what is the planner’s', () => {
     // placeholders from before `fills` are recognised by their title
     expect(slotEntry(item('x', { title: 'Focus Area Course 1 (Neuroengineering)' }), sample)?.slot).toBe('focus');
     expect(slotEntry(item('y', { title: 'My own elective' }), sample)).toBeUndefined();
+  });
+});
+
+describe('removeAutoPlan', () => {
+  it('removes every card auto-plan placed that is still planned, and nothing of the student’s', () => {
+    const once = run().plan;
+    const [first, second, ...rest] = once.terms['Fall 2026'];
+    const mine = (id: string, extra: Partial<PlanItem>): PlanItem => ({ id, title: id, credits: 3, status: 'planned', ...extra });
+    const plan: Plan = {
+      ...once,
+      terms: {
+        ...once.terms,
+        'Fall 2026': [
+          { ...first, status: 'completed' }, // taken: stays
+          mine('own', { code: 'AS.010.101', title: 'Art' }), // added by the student
+          mine('custom', { title: 'Research credit' }), // a custom entry
+          ...rest,
+        ],
+        'Spring 2027': [
+          ...once.terms['Spring 2027'],
+          { ...second, pinned: true }, // auto-placed, then dragged here
+          mine('old', { title: 'Focus Area Course 2 (Neuroengineering)' }), // placeholder from before `auto`
+          mine('oldmoved', { title: 'Free Elective', fills: 'Free Elective' }), // dragged before `pinned`
+        ],
+      },
+      assign: { ...once.assign, 'jhu-bme-bs': { ...once.assign['jhu-bme-bs'], own: 'fa3-fa4' } },
+    };
+    const left = removeAutoPlan(plan);
+    expect(Object.values(left.terms).flat().map((it) => it.id)).toEqual([first.id, 'own', 'custom']);
+    expect(left.autoPlan).toBeUndefined();
+    // assignments of removed cards go too; the student's stay
+    expect(left.assign['jhu-bme-bs']).toEqual({ own: 'fa3-fa4' });
   });
 });
 

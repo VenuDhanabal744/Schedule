@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { IndexCourse, ReqSummary, ReqTemplate } from '../types';
 import { fetchRequirementTemplate } from '../api';
-import { autoPlan, rankFocusAreas, replaceable, semesters } from '../autoplan';
+import { autoPlan, hasAutoPlan, rankFocusAreas, removeAutoPlan, replaceable, semesters } from '../autoplan';
 import { planWarnings, termCredits, termOrder } from '../plan';
 import type { Plan } from '../plan';
 import { samplePlans, sampleFor } from '../samplePlans';
@@ -55,7 +55,7 @@ export function AutoPlan({
   const best = ranked[0]?.science ? ranked[0] : undefined;
   // pre-med picks the top-ranked area unless the student chose one
   const chosen = focus ?? (premed ? best?.tag ?? '' : '');
-  const hasAuto = Object.values(plan.terms).some((items) => items.some(replaceable));
+  const hasAuto = hasAutoPlan(plan);
 
   const generate = () => {
     if (!sample) return;
@@ -207,13 +207,7 @@ export function AutoPlan({
                 <button
                   className="ics-cancel"
                   onClick={() => {
-                    onApply({
-                      ...plan,
-                      autoPlan: undefined,
-                      terms: Object.fromEntries(
-                        Object.entries(plan.terms).map(([t, items]) => [t, items.filter((it) => !replaceable(it))])
-                      ),
-                    });
+                    onApply(removeAutoPlan(plan));
                     onClose();
                   }}
                 >
